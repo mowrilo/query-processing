@@ -20,7 +20,8 @@ def decodeASCII(text):
     return textASCII
 
 path = "../data/docs"
-files = os.listdir(path)
+os.chdir(path)
+files = os.listdir(".")
 
 #os.chdir("./docs")
 #file = "12-0.txt"
@@ -28,10 +29,35 @@ files = os.listdir(path)
 #model = gensim.models.Word2Vec(sentences,size=10,window=8,workers=4,sg=1)
 #sentences = gensim.models.word2vec.LineSentence("./docs/doc2.txt")
 #model.train(sentences)
-model = gensim.models.Word2Vec(size=200,sg=1,workers=4)
-for fl in files:
-    sentences = gensim.models.word2vec.LineSentence(path + "/" + fl)
-    model.train(sentences)
+sentences = []
+first_files = files[0:10000]
+for fl in first_files:
+    f = codecs.open(fl,'r',encoding='utf-8')
+    raw = f.read()
+    tok = raw.split()
+    sentences.append(tok)
+    
+model = gensim.models.Word2Vec(sentences,min_count=1,size=200,sg=1,workers=4)
+
+ndocs = 10000
+sentences = []
+for fl in files[10000:]:
+    ndocs += 1
+    print "\tNdocs: " + str(ndocs)
+    f = codecs.open(fl,'r',encoding='utf-8')
+    raw = f.read()
+    tok = raw.split()
+    sentences.append(tok)
+    if (ndocs%10000 == 0):
+        model.train(sentences,total_examples=len(sentences),epochs=model.iter)
+        sentences = []
+    
+    print "Document " + fl
+    #sentences.append(tok)#gensim.models.word2vec.LineSentence(fl)
+
+#model = gensim.models.Word2Vec(sentences,min_count=1,size=200,sg=1,workers=4)
+   
+#model.train(sentences,total_examples = len(sentences), epochs=model.iter)
     
 model.save("../data/w2v_model")
 
