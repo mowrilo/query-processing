@@ -31,7 +31,12 @@ files = os.listdir(".")
 #model.train(sentences)
 sentences = []
 first_files = files[0:10000]
+ndocs = 0
 for fl in first_files:
+    ndocs += 1
+    print "\nNdocs: " + str(ndocs)
+    print "Document " + fl
+
     f = codecs.open(fl,'r',encoding='utf-8')
     raw = f.read()
     tok = raw.split()
@@ -48,7 +53,7 @@ for fl in files[10000:]:
     raw = f.read()
     tok = raw.split()
     sentences.append(tok)
-    if (ndocs%10000 == 0):
+    if ((ndocs%10000 == 0) or (ndocs == len(files)-1)):
         model.train(sentences,total_examples=len(sentences),epochs=model.iter)
         sentences = []
     
@@ -59,7 +64,7 @@ for fl in files[10000:]:
    
 #model.train(sentences,total_examples = len(sentences), epochs=model.iter)
     
-model.save("../data/w2v_model")
+model.save("../w2v_model2")
 
 #sentences = gensim.models.word2vec.PathLineSentences(dirr)
 
