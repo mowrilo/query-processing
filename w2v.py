@@ -19,7 +19,8 @@ def decodeASCII(text):
     textASCII = text.encode("ascii","ignore")
     return textASCII
 
-files = os.listdir("./docs")
+path = "../data/docs"
+files = os.listdir(path)
 
 #os.chdir("./docs")
 #file = "12-0.txt"
@@ -27,14 +28,12 @@ files = os.listdir("./docs")
 #model = gensim.models.Word2Vec(sentences,size=10,window=8,workers=4,sg=1)
 #sentences = gensim.models.word2vec.LineSentence("./docs/doc2.txt")
 #model.train(sentences)
-sentences = []
+model = gensim.models.Word2Vec(size=200,sg=1,workers=4)
 for fl in files:
-    f = codecs.open(dirr+fl,"r",encoding="utf-8")
-    raw = f.read()
-    raw = raw.split()
-    sentences.append(raw)
+    sentences = gensim.models.word2vec.LineSentence(path + "/" + fl)
+    model.train(sentences)
     
-model = gensim.models.Word2Vec(sentences)
+model.save("../data/w2v_model")
 
 #sentences = gensim.models.word2vec.PathLineSentences(dirr)
 
