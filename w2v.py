@@ -3,6 +3,7 @@ import lucene
 import gensim
 import numpy as np
 import pandas as pd
+import nltk
 
 from java.nio.file import Paths
 from org.apache.lucene.analysis.standard import StandardAnalyzer
@@ -39,7 +40,17 @@ for fl in first_files:
 
     f = codecs.open(fl,'r',encoding='utf-8')
     raw = f.read()
-    tok = raw.split()
+    tok = nltk.word_tokenize(raw)
+    abreTag = [i for i,x in enumerate(tok) if x == '<']
+    fechaTag = [i for i,x in enumerate(tok) if x == '>']
+
+    if (len(abreTag) == len(fechaTag)):
+        for i in xrange(0,len(abreTag)):
+            del tok[abreTag[i]:fechaTag[i]+1]
+
+    single = [i for i,x in enumerate(tok) if len(x)==1]
+    for i in sorted(single,reverse=True):
+        del tok[i]
     sentences.append(tok)
     
 model = gensim.models.Word2Vec(sentences,min_count=1,size=200,sg=1,workers=4)
@@ -51,7 +62,18 @@ for fl in files[10000:]:
     print "\tNdocs: " + str(ndocs)
     f = codecs.open(fl,'r',encoding='utf-8')
     raw = f.read()
-    tok = raw.split()
+    tok = nltk.word_tokenize(raw)
+    abreTag = [i for i,x in enumerate(tok) if x == '<']
+    fechaTag = [i for i,x in enumerate(tok) if x == '>']
+    if (len(abreTag) == len(fechaTag)):
+        for i in xrange(0,len(abreTag)):
+            del tok[abreTag[i]:fechaTag[i]+1]
+    
+    single = [i for i,x in enumerate(tok) if len(x)==1]
+
+    for i in sorted(single,reverse=True):
+        del tok[i]
+
     sentences.append(tok)
     if ((ndocs%10000 == 0) or (ndocs == len(files)-1)):
         model.train(sentences,total_examples=len(sentences),epochs=model.iter)
