@@ -4,6 +4,8 @@ import gensim
 import numpy as np
 import pandas as pd
 import nltk
+import re
+import string
 
 from java.nio.file import Paths
 from org.apache.lucene.analysis.standard import StandardAnalyzer
@@ -20,10 +22,15 @@ def decodeASCII(text):
     textASCII = text.encode("ascii","ignore")
     return textASCII
 
+def cleanhtml(raw_html):
+    cleanr = re.compile('<.*?>')
+    cleantext = re.sub(cleanr, '', raw_html)
+    return cleantext
+
 path = "../data/docs"
 os.chdir(path)
 files = os.listdir(".")
-
+files = files[0:10000]
 #os.chdir("./docs")
 #file = "12-0.txt"
 #sentences = gensim.models.word2vec.LineSentence(file)
@@ -38,42 +45,35 @@ for fl in first_files:
     print "\nNdocs: " + str(ndocs)
     print "Document " + fl
 
-    f = codecs.open(fl,'r',encoding='utf-8')
+    f = open(fl,'r')
     raw = f.read()
+    raw = cleanhtml(raw)
+    raw = raw.translate(None,string.punctuation)
     tok = nltk.word_tokenize(raw)
-    abreTag = [i for i,x in enumerate(tok) if x == '<']
-    fechaTag = [i for i,x in enumerate(tok) if x == '>']
-
-    if (len(abreTag) == len(fechaTag)):
-        for i in xrange(0,len(abreTag)):
-            del tok[abreTag[i]:fechaTag[i]+1]
-
     single = [i for i,x in enumerate(tok) if len(x)==1]
     for i in sorted(single,reverse=True):
         del tok[i]
+    tok = [w.lower() for w in tok]
     sentences.append(tok)
     
-model = gensim.models.Word2Vec(sentences,min_count=1,size=200,sg=1,workers=4)
+model = gensim.models.Word2Vec(sentences,min_count=5,size=200,sg=1,workers=4)
 
 ndocs = 10000
 sentences = []
 for fl in files[10000:]:
     ndocs += 1
     print "\tNdocs: " + str(ndocs)
-    f = codecs.open(fl,'r',encoding='utf-8')
+    f = open(fl,'r')
     raw = f.read()
+    raw = cleanhtml(raw)
+    raw = raw.translate(None,string.punctuation)
     tok = nltk.word_tokenize(raw)
-    abreTag = [i for i,x in enumerate(tok) if x == '<']
-    fechaTag = [i for i,x in enumerate(tok) if x == '>']
-    if (len(abreTag) == len(fechaTag)):
-        for i in xrange(0,len(abreTag)):
-            del tok[abreTag[i]:fechaTag[i]+1]
     
     single = [i for i,x in enumerate(tok) if len(x)==1]
 
     for i in sorted(single,reverse=True):
         del tok[i]
-
+    tok = [w.lower() for w in tok]
     sentences.append(tok)
     if ((ndocs%10000 == 0) or (ndocs == len(files)-1)):
         model.train(sentences,total_examples=len(sentences),epochs=model.iter)
@@ -86,7 +86,7 @@ for fl in files[10000:]:
    
 #model.train(sentences,total_examples = len(sentences), epochs=model.iter)
     
-model.save("../w2v_model2")
+model.save("../w2v_modelTest")
 
 #sentences = gensim.models.word2vec.PathLineSentences(dirr)
 
