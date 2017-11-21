@@ -1,5 +1,7 @@
 package searcher;
 
+import java.util.StringTokenizer;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -73,8 +75,17 @@ public class Test {
 //        writer.close();
 
         // 2. query
-        String querystr = "children";//args.length > 0 ? args[0] : "lUciene";
-
+        String querystr = "children of, bodom.";//args.length > 0 ? args[0] : "lUciene";
+        
+        System.out.println(querystr);
+        querystr = querystr.replaceAll("/[\\.,]/", " /[\\.,]");
+        System.out.println(querystr);
+        querystr = querystr.replaceAll("/[()\"]/", " ");
+        
+        StringTokenizer st = new StringTokenizer(querystr);
+        while (st.hasMoreElements()) {
+//        	System.out.println(st.nextElement());
+        }
         // the "title" arg specifies the default field to use
         // when no field is explicitly specified in the query.
         Query q = new QueryParser("contents", analyzer).parse(querystr);
@@ -91,13 +102,15 @@ public class Test {
         for(int i=0;i<hits.length;++i) {
             int docId = hits[i].doc;
             Document d = searcher.doc(docId);
-            System.out.println((i + 1) + ". " + d.get("path"));
+            //System.out.println((i + 1) + ". " + d.get("path"));
         }
 
         // reader can only be closed when there
         // is no need to access the documents any more.
         reader.close();
     }
+    
+    
     
     static void indexDocs(final IndexWriter writer, Path path) throws IOException {
         if (Files.isDirectory(path)) {
