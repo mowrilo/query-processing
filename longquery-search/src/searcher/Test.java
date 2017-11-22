@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.io.File;
 //import java.util.Date;
 
 import org.apache.lucene.analysis.Analyzer;
@@ -37,6 +38,8 @@ import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 //import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.store.FSDirectory;
+
+import queryReductor.PosTagger;
 
 public class Test {
     public static void main(String[] args) throws IOException, ParseException {
@@ -75,17 +78,27 @@ public class Test {
 //        writer.close();
 
         // 2. query
-        String querystr = "children of, bodom.";//args.length > 0 ? args[0] : "lUciene";
+        String querystr = "(children) of, bodom.";//args.length > 0 ? args[0] : "lUciene";
         
         System.out.println(querystr);
-        querystr = querystr.replaceAll("/[\\.,]/", " /[\\.,]");
+        querystr = querystr.replaceAll("[\\.,()\\\"]", " $0 ");
         System.out.println(querystr);
-        querystr = querystr.replaceAll("/[()\"]/", " ");
+//        querystr = querystr.replaceAll("/[()\"]/", " ");
         
         StringTokenizer st = new StringTokenizer(querystr);
         while (st.hasMoreElements()) {
-//        	System.out.println(st.nextElement());
+        	System.out.println(st.nextElement());
         }
+        String corpusPath = "/home/murilo/Documentos/rm/project/data/postags/nlp-master/resources/corpora/brown/";
+        
+        PosTagger pos = new PosTagger();
+        pos.train(corpusPath);
+        
+//        File folder = new File(corpusPath); 
+//        File[] files = folder.listFiles();
+//        for (int i=0; i<files.length;i++) {
+//        	System.out.println(corpusPath + files[i].getName());
+//        }
         // the "title" arg specifies the default field to use
         // when no field is explicitly specified in the query.
         Query q = new QueryParser("contents", analyzer).parse(querystr);
