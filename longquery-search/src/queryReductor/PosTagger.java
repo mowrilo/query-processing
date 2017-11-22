@@ -79,6 +79,8 @@ public class PosTagger {
 	        		}
 	        	}
 	        	rdr.close();
+	        	saveSumOfWords();
+	        	saveSumOfTags();
 	        }
 //	        System.out.println(fileName);
 		} catch(IOException e) {
@@ -136,21 +138,29 @@ public class PosTagger {
 	
 	//Viterbi algorithm
 	public String tag(String phrase) {
-		phrase = phrase.replaceAll("[\\.,()\\\"-:;?!]", " $0 ");
+//		System.out.println("Probabilidade de IN depois de IN: " + 
+//				getProbTagTag("in","in"));
+//		System.out.println("Probabilidade de AT depois de IN: " + 
+//				getProbTagTag("in","at"));
+		System.out.println("Aqui! " + phrase);
+		phrase = phrase.replaceAll("[\\.()?!]", " $0 ");//\\\"
 		StringTokenizer st = new StringTokenizer(phrase);
 		int phraseSize = st.countTokens();
+		System.out.println("Aqui! " + phrase);
 		int numberOfTags = this.tags.size();
-		int[][] track = new int[phraseSize][numberOfTags];
-		double[][] scores = new double[phraseSize][numberOfTags];
+		int[][] track = new int[numberOfTags][phraseSize];
+		double[][] scores = new double[numberOfTags][phraseSize];
 		int nWord = 0;
 		String formerTag = "<s>";
 		String word = st.nextElement().toString();
+//		System.out.println("Aqui!" + numberOfTags + "\n");
 		for (int i=0; i<numberOfTags; i++) {
 			String thisTag = tags.get(i);
 			double logProbWord = -Math.log(getProbWordTag(word,thisTag));
 			double logProbTag = -Math.log(getProbTagTag(formerTag,thisTag));
 			scores[i][0] = logProbWord + logProbTag;
 		}
+		
 		int indexTrack = 1;
 		while(st.hasMoreElements()) {
 			word = st.nextElement().toString();
@@ -188,9 +198,10 @@ public class PosTagger {
 		
 		//Backtracking
 		
-		String returnTags = "";
-		for (int i=phraseSize-1; i>=0; i--) {
-			
+		String returnTags = tags.get(minInd);
+		for (int i=phraseSize-2; i>=0; i--) {
+			returnTags = tags.get(track[minInd][i]) + " " + returnTags;
+			minInd = track[minInd][i];
 		}
 		return returnTags;
 	}
