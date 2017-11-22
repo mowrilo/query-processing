@@ -13,10 +13,14 @@ import java.util.StringTokenizer;
 import java.util.Vector;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.Reader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.lang.Math.*;
 
 public class PosTagger {
@@ -128,12 +132,46 @@ public class PosTagger {
 		this.countTagTag.get(formerTag).put(latterTag, countTagTag.get(formerTag).get(latterTag)+1);
 	}
 	
-	public void saveModel() {
+	/*
+	 * private Map<String,Map<String,Integer> > countWordTag;
+	private Map<String,Map<String,Integer> > countTagTag;
+	private Map<String,Integer> sumOfWords;
+	private Map<String,Integer> sumOfTags;
+	private Vector<String> tags; 
+	 */
+	
+	public void saveModel(String path) {
+		try {
+			FileOutputStream fileOut = new FileOutputStream(path);
+			ObjectOutputStream out = new ObjectOutputStream(fileOut);
+			out.writeObject(countWordTag);
+			out.writeObject(countTagTag);
+			out.writeObject(sumOfWords);
+			out.writeObject(sumOfTags);
+			out.writeObject(tags);
+			out.close();
+			fileOut.close();
+			System.out.println("Saved model in folder " + path);
+		} catch(IOException e) {
+			e.printStackTrace();
+		}
 		
 	}
 	
-	public void loadModel(String file) {
-		
+	public void loadModel(String file) throws ClassNotFoundException {
+		try {
+			FileInputStream fileIn = new FileInputStream(file);
+			ObjectInputStream in = new ObjectInputStream(fileIn);
+			this.countWordTag = (Map<String,Map<String,Integer> >) in.readObject();
+			this.countTagTag = (Map<String,Map<String,Integer> >) in.readObject();
+			this.sumOfWords = (Map<String,Integer>) in.readObject();
+			this.sumOfTags = (Map<String,Integer>) in.readObject();
+			this.tags = (Vector<String>) in.readObject();
+			in.close();
+			fileIn.close();
+		} catch(IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	//Viterbi algorithm
