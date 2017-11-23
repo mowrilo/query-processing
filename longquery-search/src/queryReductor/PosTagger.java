@@ -30,6 +30,7 @@ public class PosTagger {
 	private Map<String,Integer> sumOfWords;
 	private Map<String,Integer> sumOfTags;
 	private Vector<String> tags;
+	private int nWords;
 //	private int numberOfTags;
 	
 	public PosTagger() {
@@ -39,6 +40,7 @@ public class PosTagger {
 		this.sumOfWords = new HashMap<String,Integer>();
 //		this.numberOfTags = 0;
 		this.tags = new Vector<String>(0);
+		this.nWords = 0;
 	};
 	
 	public void train(String corpusPath) {
@@ -85,6 +87,13 @@ public class PosTagger {
 	        	rdr.close();
 	        	saveSumOfWords();
 	        	saveSumOfTags();
+				for (Map.Entry<String, Integer> entry : sumOfTags.entrySet()) {
+				    String tag = entry.getKey();
+				    int n = entry.getValue().intValue();
+//			    	System.out.println("Tag: " + tag +
+//					    		" #: " + n);
+				    this.nWords += n;
+				}
 	        }
 //	        System.out.println(fileName);
 		} catch(IOException e) {
@@ -149,6 +158,7 @@ public class PosTagger {
 			out.writeObject(sumOfWords);
 			out.writeObject(sumOfTags);
 			out.writeObject(tags);
+			out.writeObject(nWords);
 			out.close();
 			fileOut.close();
 			System.out.println("Saved model in folder " + path);
@@ -167,8 +177,21 @@ public class PosTagger {
 			this.sumOfWords = (Map<String,Integer>) in.readObject();
 			this.sumOfTags = (Map<String,Integer>) in.readObject();
 			this.tags = (Vector<String>) in.readObject();
+			this.nWords = (int) in.readObject();
 			in.close();
 			fileIn.close();
+			for (Map.Entry<String, Integer> entry : sumOfTags.entrySet()) {
+			    String tag = entry.getKey();
+			    int n = entry.getValue().intValue();
+			    if (n > 1000) {
+			    	System.out.println("Main Tag: " + tag +
+				    		" #: " + n);
+			    } else {
+			    	System.out.println("Other Tag: " + tag +
+				    		" #: " + n);
+			    }
+			}
+			
 		} catch(IOException e) {
 			e.printStackTrace();
 		}
@@ -278,7 +301,12 @@ public class PosTagger {
 			}
 		}
 		
-		prob = lambda*prob + (1-lambda)*(1/tags.size());
+		prob = lambda*prob + (1-lambda)*(((double) sumOfTags.get(tag))/((double) nWords));
+		
+		if (word.equals("Criminal")) {
+			System.out.println("Probability of word " + word + " in tag " +
+				tag + ": " + prob + "\nSmoothing: " + (1-lambda)*(1/((double) tags.size())));
+		}
 		return prob;
 	}
 
