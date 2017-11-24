@@ -64,6 +64,7 @@ public class PosTagger {
 	        				String nextToken = tokens.nextElement().toString();
 	        				String[] parts = nextToken.split("/");
 	        				String word = parts[0];
+	        				word = word.toLowerCase();
 	        				for (int k=1; k<(parts.length-1); k++) {
 	        					word+="/";
 	        					word+=parts[k];
@@ -203,11 +204,17 @@ public class PosTagger {
 //				getProbTagTag("in","in"));
 //		System.out.println("Probabilidade de AT depois de IN: " + 
 //				getProbTagTag("in","at"));
-		System.out.println("Aqui! " + phrase);
-		phrase = phrase.replaceAll("[\\.()?!]", " $0 ");//\\\"
+//		System.out.println("Aqui! " + phrase);
+		phrase = phrase.replaceAll("\\((.*?)\\)", "");//\\\"
+		if (phrase.endsWith(".")) {
+			phrase = phrase.replaceAll("[\\.]", "");
+			phrase += ".";
+		}
+		phrase = phrase.replaceAll("[\\.?!,]", " $0 ");
+		phrase = phrase.toLowerCase();
 		StringTokenizer st = new StringTokenizer(phrase);
 		int phraseSize = st.countTokens();
-		System.out.println("Aqui! " + phrase);
+		System.out.println(phrase);
 		int numberOfTags = this.tags.size();
 		int[][] track = new int[numberOfTags][phraseSize];
 		double[][] scores = new double[numberOfTags][phraseSize];
@@ -302,11 +309,6 @@ public class PosTagger {
 		}
 		
 		prob = lambda*prob + (1-lambda)*(((double) sumOfTags.get(tag))/((double) nWords));
-		
-		if (word.equals("Criminal")) {
-			System.out.println("Probability of word " + word + " in tag " +
-				tag + ": " + prob + "\nSmoothing: " + (1-lambda)*(1/((double) tags.size())));
-		}
 		return prob;
 	}
 
