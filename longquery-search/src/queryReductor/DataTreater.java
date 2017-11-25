@@ -17,7 +17,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.StringTokenizer;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.Comparator;
 
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
@@ -39,9 +40,9 @@ import queryReductor.PosTagger;
 
 public class DataTreater {
 	
-	private long docCount;
-	private Vector<Vector<Double> > data;
-//	private PosTagger pos;
+//	private long docCount;
+	private ArrayList<ArrayList<Double> > data;
+	private PosTagger pos;
 	private String[] features;
 	private double maxIdf;
 	private double maxTf;
@@ -49,7 +50,9 @@ public class DataTreater {
 	private double minPos;
 	
 	public DataTreater() throws ClassNotFoundException {
-		this.data = new Vector<Vector<Double> >();
+		pos = new PosTagger();
+    	pos.loadModel("/home/murilo/Documentos/rm/project/data/POSModel.ser");
+		this.data = new ArrayList<ArrayList<Double> >();
     	features = new String[]{"wdt","nn",
     		 		"jj", "in", "hvz","cc", "vb",
     		 		"np", "vbn","ben","ber","rb",
@@ -64,12 +67,12 @@ public class DataTreater {
 	
 	public void buildData(String path, IndexReader reader) throws IOException, ClassNotFoundException {
 		File folder = new File(path);
-		this.docCount = reader.getDocCount("contents");
+		long docCount = reader.getDocCount("contents");
         File[] files = folder.listFiles();
         String fileName = "";
-        PosTagger pos = new PosTagger();
-    	pos.loadModel("/home/murilo/Documentos/rm/project/data/POSModel.ser");
-        long docCount = reader.getDocCount("contents");
+//        PosTagger pos = new PosTagger();
+//    	pos.loadModel("/home/murilo/Documentos/rm/project/data/POSModel.ser");
+//        long docCount = reader.getDocCount("contents");
         
         this.maxIdf = 0;
         this.maxPos = 0;
@@ -105,7 +108,7 @@ public class DataTreater {
         			title = title.toLowerCase();
         			desc = desc.toLowerCase();
         			desc = desc.replaceAll("( )\\1+", " ");
-        			String tags = pos.tag(desc);
+        			String tags = this.pos.tag(desc);
         			System.out.println(tags);
 //        			StringTokenizer tokens = new StringTokenizer(desc);
 //        			StringTokenizer posTags = new StringTokenizer(tags);
@@ -128,12 +131,13 @@ public class DataTreater {
         				if ((!tg.equals(".")) && (!tg.equals(",")) &&
         						(!tg.equals("*")) && (!tg.equals(":"))) {
 //        					writer.write("\n");
-            				Vector<Double> vec = new Vector<Double>();
+            				ArrayList<Double> vec = new ArrayList<Double>();
             				
             				Term t = new Term("contents",tok);
             		        int df = reader.docFreq(t);
             		        double idf = 0;
             		        if (df > 0)	idf = Math.log(((double) docCount)/((double) df));
+//            		        System.out.println("IDF: " + idf);
             		        vec.add(idf);
             		        
             		        if (idf > this.maxIdf)	this.maxIdf = idf;
@@ -143,13 +147,11 @@ public class DataTreater {
             		        if (df == 0) {
             		        	termsPerDoc = 0.;
             		        }
-//            		        writer.write(String.valueOf(termsPerDoc)+",");
             		        vec.add(termsPerDoc);
             		        
             		        if (termsPerDoc > this.maxTf)	this.maxTf = termsPerDoc;
             		        
             		        double queryPlace = ((double) place)/((double) phraseSize);
-//            				writer.write(String.valueOf(queryPlace)+",");
             				vec.add(queryPlace);
             				
             				if (queryPlace > this.maxPos)	this.maxPos = queryPlace;
@@ -171,11 +173,14 @@ public class DataTreater {
             					nextTag = "virgula";
             				}
             				
-            				
+            				int mult = 1;
             				for (String feat: features) {
             					double isThis = 0;
             					if (tg.equals(feat)) {
             						isThis = 1;
+            						if (tg.equals("nn") || tg.equals("np")){
+            							isThis = isThis*mult;
+            						}
             					}
             					else if (feat.startsWith("former_")) {
             						String[] featSplit = feat.split("_");
@@ -202,7 +207,7 @@ public class DataTreater {
             				}
             				vec.add(getOut);
 //            				writer.write(String.valueOf(getOut)+"\n");
-            				data.add(vec);
+            				this.data.add(vec);
         				}
         				lastTag = tg;
         			}
@@ -234,7 +239,7 @@ public class DataTreater {
 		try {
 			FileInputStream fileIn = new FileInputStream(file);
 			ObjectInputStream in = new ObjectInputStream(fileIn);
-			this.data = (Vector<Vector<Double> >) in.readObject();
+			this.data = (ArrayList<ArrayList<Double> >) in.readObject();
 //			out.writeDouble(maxIdf);
 //			out.writeDouble(maxPos);
 //			out.writeDouble(maxTf);
@@ -251,25 +256,116 @@ public class DataTreater {
 		}
 	}
 	
-//	public static void main(String[] args) throws IOException {
-////		System.out.println("Hello world!");
-////		buildData("/home/murilo/Documentos/rm/project/data/topics/train/");
-//	}
-//	
-//	public void 
+	public ArrayList<ArrayList<Double> > analyzeSentence(String sentence, IndexReader reader) 
+			throws IOException {
+		long docCount = reader.getDocCount("contents");
+		sentence = sentence.replaceAll("\\((.*?)\\)", "");//\\\"
+		if (sentence.endsWith(".")) {
+			sentence = sentence.replaceAll("[\\.]", "");
+			sentence += ".";
+		}
+		sentence = sentence.replaceAll("[\\.?!,]", " $0 ");
+		sentence = sentence.toLowerCase();
+		sentence = sentence.replaceAll("( )\\1+", " ");
+		
+		String taggedSentence = this.pos.tag(sentence);
+		ArrayList<ArrayList<Double> > dataMatrix = 
+				new ArrayList<ArrayList<Double> >();
+		
+		String[] terms = sentence.split(" ");
+		String[] tags = taggedSentence.split(" ");
+		
+		int sentSize = terms.length;
+		String lastTag = "<s>";
+		int place = 0;
+		for (int i=0; i<sentSize; i++) {
+			place++;
+			String tok = terms[i];
+			String tg = tags[i];
+			tok = tok.trim();
+			tg = tg.trim();
+			if ((!tg.equals(".")) && (!tg.equals(",")) &&
+					(!tg.equals("*")) && (!tg.equals(":"))) {
+//				
+				ArrayList<Double> thisSample = new ArrayList<Double>();
+				Term t = new Term("contents",tok);
+		        int df = reader.docFreq(t);
+		        double idf = 0;
+//		        System.out.println("DocCount: " + docCount + 
+//		        		" df: " + df);
+		        if (df > 0)	idf = Math.log(((double) docCount)/((double) df));
+		        idf = idf/maxIdf;
+		        thisSample.add(idf);
+		        
+		        long totalTermFreq = reader.totalTermFreq(t);
+		        double termsPerDoc = ((double) totalTermFreq)/((double) df);
+		        if (df == 0) {
+		        	termsPerDoc = 0.;
+		        }
+		        termsPerDoc = termsPerDoc/maxTf;
+		        thisSample.add(termsPerDoc);
+		        
+		        double queryPlace = ((double) place)/((double) sentSize);
+		        queryPlace = (queryPlace - minPos)/(maxPos-minPos);
+		        thisSample.add(queryPlace);
+				
+				if (lastTag.equals(",")) {
+					lastTag = "virgula";
+				}
+				
+				String nextTag;
+				if (i == (sentSize-1)) {
+					nextTag = "</s>";
+				} else {
+					nextTag = tags[i+1];
+				}
+				
+				if (nextTag.equals(",")) {
+					nextTag = "virgula";
+				}
+				
+				int mult = 1;
+				for (String feat: features) {
+					double isThis = 0;
+					if (tg.equals(feat)) {
+						isThis = 1;
+						if (tg.equals("nn") || tg.equals("np")){
+							isThis = isThis*mult;
+						}
+					}
+					else if (feat.startsWith("former_")) {
+						String[] featSplit = feat.split("_");
+						if (lastTag.equals(featSplit[1])) {
+							isThis = 1;
+						}
+					}
+					else if (feat.startsWith("next_")) {
+						String[] featSplit = feat.split("_");
+						if (nextTag.equals(featSplit[1])) {
+							isThis = 1;
+						}
+					}
+					thisSample.add(isThis);
+				}
+//				System.out.println(thisSample.size());
+				dataMatrix.add(thisSample);
+			}
+			lastTag = tg;
+		}
+		return dataMatrix;
+	}
 	
-	public void buildCSV(String path, IndexReader reader) throws IOException, ClassNotFoundException {
+	public void buildCSV(String path, IndexReader reader) 
+			throws IOException, ClassNotFoundException {
 		File folder = new File(path);
-		this.docCount = reader.getDocCount("contents");
+		long docCount = reader.getDocCount("contents");
         File[] files = folder.listFiles();
         String fileName = "";
         File dataFile = new File("/home/murilo/Documentos/rm/project/data/data.csv");
         BufferedWriter writer = null;
-        PosTagger pos = new PosTagger();
-    	pos.loadModel("/home/murilo/Documentos/rm/project/data/POSModel.ser");
         writer = new BufferedWriter(new FileWriter(dataFile));
         writer.write("idf,mean_tf,query_place,pos,last_pos,next_pos,get_out\n");
-        long docCount = reader.getDocCount("contents");
+//        long docCount = reader.getDocCount("contents");
         for (int i=0; i<files.length;i++) {
         	fileName = files[i].getName();
         	System.out.println(fileName);
@@ -299,7 +395,7 @@ public class DataTreater {
         			title = title.toLowerCase();
         			desc = desc.toLowerCase();
         			desc = desc.replaceAll("( )\\1+", " ");
-        			String tags = pos.tag(desc);
+        			String tags = this.pos.tag(desc);
         			System.out.println(tags);
 //        			StringTokenizer tokens = new StringTokenizer(desc);
 //        			StringTokenizer posTags = new StringTokenizer(tags);
@@ -326,7 +422,8 @@ public class DataTreater {
             				
             				Term t = new Term("contents",tok);
             		        int df = reader.docFreq(t);
-            		        double idf = ((double) df)/((double) docCount);
+            		        double idf = 0;
+            		        if (df > 0)	idf = Math.log(((double) docCount)/((double) df));
             		        writer.write(String.valueOf(idf)+",");
             		        
             		        long totalTermFreq = reader.totalTermFreq(t);
