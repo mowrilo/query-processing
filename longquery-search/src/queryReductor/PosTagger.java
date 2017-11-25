@@ -162,7 +162,7 @@ public class PosTagger {
 			out.writeObject(nWords);
 			out.close();
 			fileOut.close();
-			System.out.println("Saved model in folder " + path);
+			System.out.println("Saved model in file " + path);
 		} catch(IOException e) {
 			e.printStackTrace();
 		}
@@ -181,17 +181,17 @@ public class PosTagger {
 			this.nWords = (int) in.readObject();
 			in.close();
 			fileIn.close();
-			for (Map.Entry<String, Integer> entry : sumOfTags.entrySet()) {
-			    String tag = entry.getKey();
-			    int n = entry.getValue().intValue();
-			    if (n > 1000) {
-			    	System.out.println("Main Tag: " + tag +
-				    		" #: " + n);
-			    } else {
-			    	System.out.println("Other Tag: " + tag +
-				    		" #: " + n);
-			    }
-			}
+//			for (Map.Entry<String, Integer> entry : sumOfTags.entrySet()) {
+//			    String tag = entry.getKey();
+//			    int n = entry.getValue().intValue();
+//			    if (n > 1000) {
+//			    	System.out.println("Main Tag: " + tag +
+//				    		" #: " + n);
+//			    } else {
+//			    	System.out.println("Other Tag: " + tag +
+//				    		" #: " + n);
+//			    }
+//			}
 			
 		} catch(IOException e) {
 			e.printStackTrace();

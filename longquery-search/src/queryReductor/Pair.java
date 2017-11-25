@@ -1,25 +1,27 @@
 package queryReductor;
 
-public class Pair<X,Y> {
-	private final X first;
-	private final Y second;
+import java.util.Comparator;
+
+public class Pair {
+	private final double value;
+	private final int index;
 	
-	public Pair(X x, Y y) {
-		this.first = x;
-		this.second = y;
+	public Pair(double x, int y) {
+		this.value = x;
+		this.index = y;
 	}
 	
-	public X getFirst() {
-		return(first);
+	public double getFirst() {
+		return(value);
 	}
 	
-	public Y getSecond() {
-		return(second);
+	public int getSecond() {
+		return(index);
 	}
 	
-	public Boolean isEqual(Pair<X,Y> P) {
-		if (P.getFirst() == this.first) {
-			if (P.getSecond() == this.second) {
+	public Boolean isEqual(Pair P) {
+		if (P.getFirst() == this.value) {
+			if (P.getSecond() == this.index) {
 				return true;
 			}
 		}
