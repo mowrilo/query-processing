@@ -15,6 +15,12 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 //import java.util.Date;
 
 import org.apache.lucene.analysis.Analyzer;
@@ -48,7 +54,39 @@ import queryReductor.PosTagger;
 
 public class Test {
 	
-	
+//	private Map<Integer,Map<String,Integer> > relevance;
+	//"/home/murilo/Documentos/rm/project/data/relevance_judgements/qrels.201-250.disk2.disk3.parts1-5"
+	protected static Map<Integer,Map<String,Integer> > loadRelevance(String path) throws IOException, NullPointerException {
+		Map<Integer,Map<String,Integer> > relevance = new LinkedHashMap<Integer,Map<String,Integer> >();
+		File folder = new File(path);
+//		System.out.println(folder.exists());
+        File[] files = folder.listFiles();
+//        System.out.println(path);
+        for (int i=0; i<files.length;i++) {
+        	String fileName = files[i].getName();
+//        	System.out.println(fileName);
+        	BufferedReader rdr = new BufferedReader(new FileReader(path + fileName));
+        	String line = rdr.readLine();
+//        	int waitingTitle = 1;
+        	while (line != null) {
+        		String[] fields = line.split(" ");
+        		int topic = Integer.parseInt(fields[0]);
+        		System.out.println("Topic: " + topic + "\n" + "Doc: " + fields[2] + 
+        				"\nRel: " + fields[3] + "\n\n");
+        		if (!relevance.containsKey(topic)) {
+        			Map<String,Integer> relevDocs = new HashMap<String,Integer>();
+        			relevance.put(topic, relevDocs);
+        		}
+        		String doc = fields[2];
+        		doc = doc.trim();
+        		int rel = Integer.parseInt(fields[3]);
+        		relevance.get(topic).put(doc, rel);
+        		line = rdr.readLine();
+        	}
+        	rdr.close();
+        }
+        return relevance;
+	}
 	
     public static void main(String[] args) throws IOException, ParseException, ClassNotFoundException {
         // 0. Specify the analyzer for tokenizing text.
@@ -63,7 +101,7 @@ public class Test {
         iwc.setSimilarity(new BM25Similarity());
           // Create a new index in the directory, removing any
           // previously indexed documents:
-//       iwc.setOpenMode(OpenMode.CREATE);
+       iwc.setOpenMode(OpenMode.CREATE);
 //
 //        // Optional: for better indexing performance, if you
 //        // are indexing many documents, increase the RAM
@@ -72,8 +110,8 @@ public class Test {
 //        //
 //        // iwc.setRAMBufferSizeMB(256.0);
 //
-//        IndexWriter writer = new IndexWriter(dir, iwc);
-//        indexDocs(writer, docDir);
+        IndexWriter writer = new IndexWriter(dir, iwc);
+        indexDocs(writer, docDir);
 //
 //        // NOTE: if you want to maximize search performance,
 //        // you can optionally call forceMerge here.  This can be
@@ -83,7 +121,7 @@ public class Test {
 //        //
 //        // writer.forceMerge(1);
 //
-//        writer.close();
+        writer.close();
 
         // 2. query
         String querystr = "children";//args.length > 0 ? args[0] : "lUciene";
@@ -111,7 +149,7 @@ public class Test {
 //        System.out.println(b);
         
         
- 
+        Map<Integer,Map<String,Integer> > relevance = loadRelevance("/home/murilo/Documentos/rm/project/data/relevance_judgments/test/test/");
         
 //        Coping with overcrowded prisons
 //        Antitrust Cases Pending
@@ -140,9 +178,11 @@ public class Test {
 //        dt.saveData("/home/murilo/Documentos/rm/project/data/trainData.ser");
         dt.loadData("/home/murilo/Documentos/rm/project/data/trainData.ser");
         
-//        String originalQuery = "Document will discuss government assistance to Airbus Industrie or mention a trade dispute between Airbus and a US aircraft producer over the issue of subsidies";
-        String originalQuery = "Identify what is being done or what ideas are being proposed to ensure that Social Security will not go broke?";
+        String originalQuery = "Document will discuss government assistance to Airbus Industrie or mention a trade dispute between Airbus and a US aircraft producer over the issue of subsidies";
+//        String originalQuery = "Identify what is being done or what ideas are being proposed to ensure that Social Security will not go broke?";
 //        String originalQuery = "What is the difference between deduction and induction in the process of reasoning?";
+//        String originalQuery = "Where are the nuclear power plants in the U.S. and what has been their rate of production?";
+        //String originalQuery = "How widespread is the illegal disposal of medical waste in the U.S. and what is being done to combat this dumping?";
         //Identify what is being done or what ideas are being proposed to ensure that Social Security will not go broke
 //        System.in.
         
@@ -158,7 +198,7 @@ public class Test {
 //        System.out.println("Done!");
 //        clas.saveModel("/home/murilo/Documentos/rm/project/data/logisticData.ser");
         clas.loadModel("/home/murilo/Documentos/rm/project/data/logisticData.ser");
-        double threshold = .8;
+        double threshold = .7;
         ArrayList<Integer> results = clas.predictAll(dataPhrase,threshold);
         
         originalQuery = originalQuery.replaceAll("\\((.*?)\\)", "");//\\\"
@@ -202,6 +242,7 @@ public class Test {
 //        long docCount2 = reader.getDocCount("path");
 //        System.out.println("Total doc count in 'path': " + docCount2);
         // 4. display results
+//		System.out.println(relevance.size());
 		System.out.println("Results for original query:");
 		Query q = new QueryParser("contents", analyzer).parse(originalQuery);
 		TopDocs docs = searcher.search(q, hitsPerPage);
@@ -210,7 +251,15 @@ public class Test {
         for(int i=0;i<hits.length;++i) {
             int docId = hits[i].doc;
             Document d = searcher.doc(docId);
-            System.out.println((i + 1) + ". " + d.get("path"));
+            String docPath = d.get("path");
+            String[] paths = docPath.split("/");
+            String docName = paths[paths.length-1];
+            docName = docName.trim();
+            int ntop = 209;
+//            System.out.println("Docname: " + docName);
+            int rel = 0;
+            if (relevance.get(ntop).containsKey(docName))	rel = relevance.get(ntop).get(docName).intValue();
+            System.out.println((i + 1) + ". " + docName + " Relevance: " + rel);
         }
         
         System.out.println("Results for new query:");
@@ -221,7 +270,15 @@ public class Test {
         for(int i=0;i<hits2.length;++i) {
             int docId = hits2[i].doc;
             Document d = searcher.doc(docId);
-            System.out.println((i + 1) + ". " + d.get("path"));
+            String docPath = d.get("path");
+            String[] paths = docPath.split("/");
+            String docName = paths[paths.length-1];
+            docName = docName.trim();
+            int ntop = 209;
+//            System.out.println("Docname: " + docName);
+            int rel = 0;
+            if (relevance.get(ntop).containsKey(docName))	rel = relevance.get(ntop).get(docName).intValue();
+            System.out.println((i + 1) + ". " + docName + " Relevance: " + rel);
         }
 
 
