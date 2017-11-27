@@ -271,6 +271,7 @@ public class PosTagger {
 			returnTags = tags.get(track[minInd][i]) + " " + returnTags;
 			minInd = track[minInd][i];
 		}
+		System.out.println(returnTags);
 		return returnTags;
 	}
 	

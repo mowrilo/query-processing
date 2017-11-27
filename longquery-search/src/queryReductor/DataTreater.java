@@ -53,16 +53,19 @@ public class DataTreater {
 		pos = new PosTagger();
     	pos.loadModel("/home/murilo/Documentos/rm/project/data/POSModel.ser");
 		this.data = new ArrayList<ArrayList<Double> >();
-    	features = new String[]{"wdt","nn",
-    		 		"jj", "in", "hvz","cc", "vb",
-    		 		"np", "vbn","ben","ber","rb",
-    		 		"cs", "wps","hv", "ap", "to",
-    		 		"dt", "md", "former_<s>","former_jj","former_in", 
-    		 		"former_at","former_hvz","former_cc","former_nns","former_virgula",
-    		 		"former_doz","former_ber","former_wps","former_hv","former_np",
-    		 		"former_to","former_.","former_md","next_nn","next_at",
-    		 		"next_.","next_vbn","next_ben","next_pp$","next_wps",
-    				"next_ap"};
+//    	features = new String[]{"wdt","nn",
+//    		 		"jj", "in", "hvz","cc", "vb",
+//    		 		"np", "vbn","ben","ber","rb",
+//    		 		"cs", "wps","hv", "ap", "to",
+//    		 		"dt", "md", "former_<s>","former_jj","former_in", 
+//    		 		"former_at","former_hvz","former_cc","former_nns","former_virgula",
+//    		 		"former_doz","former_ber","former_wps","former_hv","former_np",
+//    		 		"former_to","former_.","former_md","next_nn","next_at",
+//    		 		"next_.","next_vbn","next_ben","next_pp$","next_wps",
+//    				"next_ap"};
+    	features = new String[] {"nn","vb","next_.",
+    			 "former_in","former_nns","np","wdt"};
+    	
 	}
 	
 	public void buildData(String path, IndexReader reader) throws IOException, ClassNotFoundException {
@@ -128,8 +131,8 @@ public class DataTreater {
         				tok = tok.trim();
         				tg = tg.trim();
 //        				tg = tg.replaceAll("[$]", "");
-        				if ((!tg.equals(".")) && (!tg.equals(",")) &&
-        						(!tg.equals("*")) && (!tg.equals(":"))) {
+        				if ((!tok.equals(".")) && (!tok.equals(",")) &&
+        						(!tok.equals(":")) && (!tok.equals("?")) && (!tok.equals("!"))) {
 //        					writer.write("\n");
             				ArrayList<Double> vec = new ArrayList<Double>();
             				
@@ -147,12 +150,12 @@ public class DataTreater {
             		        if (df == 0) {
             		        	termsPerDoc = 0.;
             		        }
-            		        vec.add(termsPerDoc);
+//            		        vec.add(termsPerDoc);
             		        
             		        if (termsPerDoc > this.maxTf)	this.maxTf = termsPerDoc;
             		        
             		        double queryPlace = ((double) place)/((double) phraseSize);
-            				vec.add(queryPlace);
+//            				vec.add(queryPlace);
             				
             				if (queryPlace > this.maxPos)	this.maxPos = queryPlace;
             				if (queryPlace < this.minPos)	this.minPos = queryPlace;
@@ -173,13 +176,28 @@ public class DataTreater {
             					nextTag = "virgula";
             				}
             				
-            				int mult = 1;
+            				if (tok.endsWith("s")) {
+            					tok = tok.substring(0, tok.length()-1);
+            				} 
+            				if (tok.endsWith("ing")) {
+            					tok = tok.substring(0, tok.length()-3);
+            				}
+            				
+            				
+            				double getOut = 1;
+            				if (title.contains(tok)) {
+            					getOut = 0;
+            				}
+            				
+            				double mult = 1;
             				for (String feat: features) {
             					double isThis = 0;
             					if (tg.equals(feat)) {
             						isThis = 1;
             						if (tg.equals("nn") || tg.equals("np")){
-            							isThis = isThis*mult;
+//            							if (getOut == 0) {
+            								isThis = isThis*mult;
+//            							}
             						}
             					}
             					else if (feat.startsWith("former_")) {
@@ -201,10 +219,6 @@ public class DataTreater {
 //            				writer.write(lastTag+",");
 //            				writer.write(nextTag+",");
             				
-            				double getOut = 1;
-            				if (title.contains(tok)) {
-            					getOut = 0;
-            				}
             				vec.add(getOut);
 //            				writer.write(String.valueOf(getOut)+"\n");
             				this.data.add(vec);
@@ -284,9 +298,9 @@ public class DataTreater {
 			String tg = tags[i];
 			tok = tok.trim();
 			tg = tg.trim();
-			if ((!tg.equals(".")) && (!tg.equals(",")) &&
-					(!tg.equals("*")) && (!tg.equals(":"))) {
-//				
+			if ((!tok.equals(".")) && (!tok.equals(",")) &&
+					(!tok.equals(":")) && (!tok.equals("?")) && (!tok.equals("!"))) {
+//				System.out.println("tok: "+tok);
 				ArrayList<Double> thisSample = new ArrayList<Double>();
 				Term t = new Term("contents",tok);
 		        int df = reader.docFreq(t);
@@ -296,6 +310,7 @@ public class DataTreater {
 		        if (df > 0)	idf = Math.log(((double) docCount)/((double) df));
 		        idf = idf/maxIdf;
 		        thisSample.add(idf);
+//		        System.out.println("Idf: " + idf);
 		        
 		        long totalTermFreq = reader.totalTermFreq(t);
 		        double termsPerDoc = ((double) totalTermFreq)/((double) df);
@@ -303,11 +318,11 @@ public class DataTreater {
 		        	termsPerDoc = 0.;
 		        }
 		        termsPerDoc = termsPerDoc/maxTf;
-		        thisSample.add(termsPerDoc);
+//		        thisSample.add(termsPerDoc);
 		        
 		        double queryPlace = ((double) place)/((double) sentSize);
 		        queryPlace = (queryPlace - minPos)/(maxPos-minPos);
-		        thisSample.add(queryPlace);
+//		        thisSample.add(queryPlace);
 				
 				if (lastTag.equals(",")) {
 					lastTag = "virgula";
@@ -324,7 +339,7 @@ public class DataTreater {
 					nextTag = "virgula";
 				}
 				
-				int mult = 1;
+				double mult = 1;
 				for (String feat: features) {
 					double isThis = 0;
 					if (tg.equals(feat)) {
@@ -415,8 +430,8 @@ public class DataTreater {
         				tok = tok.trim();
         				tg = tg.trim();
 //        				tg = tg.replaceAll("[$]", "");
-        				if ((!tg.equals(".")) && (!tg.equals(",")) &&
-        						(!tg.equals("*")) && (!tg.equals(":"))) {
+        				if ((!tok.equals(".")) && (!tok.equals(",")) &&
+        						(!tok.equals(":")) && (!tok.equals("?")) && (!tok.equals("!"))) {
 //        					writer.write("\n");
             				
             				

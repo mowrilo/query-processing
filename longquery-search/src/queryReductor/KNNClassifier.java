@@ -50,24 +50,24 @@ public class KNNClassifier {
 	}
 	
 	protected void loadData(String file) throws ClassNotFoundException {
-		try {
-			FileInputStream fileIn = new FileInputStream(file);
-			ObjectInputStream in = new ObjectInputStream(fileIn);
-			this.data = (ArrayList<ArrayList<Double> >) in.readObject();
-			this.maxIdf = in.readDouble();
-			this.maxPos = in.readDouble();
-			this.maxTf = in.readDouble();
-			this.minPos = in.readDouble();
-			
-//			System.out.println("Max IDF: " + maxIdf +
-//					"\nMax Pos: " + maxPos + 
-//					"\nMax Tf: " + maxTf + 
-//					"\nMin Pos: " + minPos);
-			in.close();
-			fileIn.close();
-		} catch(IOException e) {
-			e.printStackTrace();
-		}
+			try {
+				FileInputStream fileIn = new FileInputStream(file);
+				ObjectInputStream in = new ObjectInputStream(fileIn);
+				this.data = (ArrayList<ArrayList<Double> >) in.readObject();
+				this.maxIdf = in.readDouble();
+				this.maxPos = in.readDouble();
+				this.maxTf = in.readDouble();
+				this.minPos = in.readDouble();
+				
+	//			System.out.println("Max IDF: " + maxIdf +
+	//					"\nMax Pos: " + maxPos + 
+	//					"\nMax Tf: " + maxTf + 
+	//					"\nMin Pos: " + minPos);
+				in.close();
+				fileIn.close();
+			} catch(IOException e) {
+				e.printStackTrace();
+			}
 	}
 	
 	protected double getEuclideanDistance(ArrayList<Double> sample1, ArrayList<Double> sample2) {
@@ -121,7 +121,7 @@ public class KNNClassifier {
 		}
 //		System.out.println("Aqui2!!\n\n");
 		
-		if (sumOfLabels >= (((double) k)*.5)) {
+		if (sumOfLabels >= (((double) k)*.8)) {
 //			System.out.println("Caiu fora!");
 			return 1;
 		} else {
