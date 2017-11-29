@@ -205,12 +205,12 @@ public class PosTagger {
 //		System.out.println("Probabilidade de AT depois de IN: " + 
 //				getProbTagTag("in","at"));
 //		System.out.println("Aqui! " + phrase);
-		phrase = phrase.replaceAll("\\((.*?)\\)", "");//\\\"
-		if (phrase.endsWith(".")) {
-			phrase = phrase.replaceAll("[\\.]", "");
-			phrase += ".";
-		}
-		phrase = phrase.replaceAll("[\\.?!,]", " $0 ");
+//		phrase = phrase.replaceAll("\\((.*?)\\)", "");//\\\"
+//		if (phrase.endsWith(".")) {
+//			phrase = phrase.replaceAll("[\\.]", "");
+//			phrase += ".";
+//		}
+//		phrase = phrase.replaceAll("[\\.?!,]", " $0 ");
 		phrase = phrase.toLowerCase();
 		StringTokenizer st = new StringTokenizer(phrase);
 		int phraseSize = st.countTokens();

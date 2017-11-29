@@ -17,6 +17,8 @@ public class LogisticRegressionClassifier {
 	private double maxTf;
 	private double maxPos;
 	private double minPos;
+	private double maxLen;
+	private double minLen;
 	
 	public LogisticRegressionClassifier() {
 		params = new ArrayList<Double>();
@@ -72,6 +74,8 @@ public class LogisticRegressionClassifier {
 			this.maxPos = in.readDouble();
 			this.maxTf = in.readDouble();
 			this.minPos = in.readDouble();
+			this.maxLen = in.readDouble();
+			this.minLen = in.readDouble();
 			in.close();
 			fileIn.close();
 		} catch(IOException e) {
@@ -116,9 +120,16 @@ public class LogisticRegressionClassifier {
 				} else if (j==1) {
 					double newTf = sample.get(j)/maxTf;
 					sample2.add(newTf);
-				} else if (j==2) {
-					double newPos = (sample.get(j) - minPos)/(maxPos-minPos);
-					sample2.add(newPos);
+				} 
+//				else if (j==2) {
+//					double newPos = (sample.get(j) - minPos)/(maxPos-minPos);
+//					sample2.add(newPos);
+//				} 
+				else if (j==2) {
+					double newLen = (sample.get(j) - minLen)/(maxLen-minLen);
+//					System.out.println("max len: "  + maxLen +
+//							" minLen: " + minLen);
+					sample2.add(newLen);
 				} else {
 					sample2.add(sample.get(j));
 				}
@@ -149,7 +160,7 @@ public class LogisticRegressionClassifier {
 	
 	protected void initParams(int size) {
 		for (int i=0; i<size; i++) {
-			double number = .01;//Math.random();
+			double number = .001;//Math.random();
 			params.add(number);
 		}
 	}
@@ -158,26 +169,33 @@ public class LogisticRegressionClassifier {
 		loadData(dataPath);
 		normalizeData();
 		int size = data.get(0).size();
-//		System.out.println("Batman size: " + size);
 		initParams(size);
+//		System.out.println("Batman size: " + params.size());
 		double diff = 1;
+		double lastValue = 10000;
 //		for (int i=0;i<maxIter;i++) {
+		int iter = 0;
 		while (true) {
 			double thisDiff = 0;
-			
+			double newValue=0;
 			ArrayList<Double> grad = gradient();
 			for (int j=0;j<params.size();j++) {
 //				if (!params.get(j).isNaN())	System.out.println("param value " + params.get(j));
-				double newValue = params.get(j).doubleValue() + 
+				newValue = params.get(j).doubleValue() + 
 						step*grad.get(j).doubleValue();
 				thisDiff += Math.pow((params.get(j).doubleValue() - newValue),2);
 				params.set(j, Double.valueOf(newValue));
 			}
 //			System.out.println("");
 			thisDiff /= params.size();
-			if (thisDiff < (.0001*diff))	break;
-			diff = thisDiff;
+//			if (thisDiff < (.001*diff))	break;
+			if (thisDiff < (.000001*lastValue)) break;
+//			if (!Double.isNaN(newValue))	System.out.println(newValue);
+//			diff = thisDiff;
+			lastValue = newValue;
+			iter++;
 		}
+		System.out.println("Model converged in " + iter + " iterations.");
 	}
 	
 	public int predict(ArrayList<Double> sample, double threshold) {

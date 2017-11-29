@@ -2,8 +2,10 @@ package searcher;
 
 import java.util.ArrayList;
 import java.util.StringTokenizer;
-
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -17,6 +19,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -54,6 +57,15 @@ import queryReductor.PosTagger;
 
 public class Test {
 	
+	protected static int getRelevants(int ntop,Map<Integer,Map<String,Integer> > relevance) {
+		Map<String,Integer> thistop = relevance.get(ntop);
+		int nrel = 0;
+		for (Integer rel: thistop.values()) {
+			nrel += rel.intValue();
+		}
+		return nrel;
+	}
+	
 //	private Map<Integer,Map<String,Integer> > relevance;
 	//"/home/murilo/Documentos/rm/project/data/relevance_judgements/qrels.201-250.disk2.disk3.parts1-5"
 	protected static Map<Integer,Map<String,Integer> > loadRelevance(String path) throws IOException, NullPointerException {
@@ -89,52 +101,9 @@ public class Test {
 	}
 	
     public static void main(String[] args) throws IOException, ParseException, ClassNotFoundException {
-        // 0. Specify the analyzer for tokenizing text.
-        //    The same analyzer should be used for indexing and searching
-//        StandardAnalyzer analyzer = new StandardAnalyzer();
-    	String docsPath = "/home/murilo/Documentos/rm/project/data/docs";
-    	final Path docDir = Paths.get(docsPath);
         String indexPath = "/home/murilo/Documentos/rm/project/index";
-        Directory dir = FSDirectory.open(Paths.get(indexPath));
         Analyzer analyzer = new StandardAnalyzer();
-        IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
-        iwc.setSimilarity(new BM25Similarity());
-          // Create a new index in the directory, removing any
-          // previously indexed documents:
-       iwc.setOpenMode(OpenMode.CREATE);
-//
-//        // Optional: for better indexing performance, if you
-//        // are indexing many documents, increase the RAM
-//        // buffer.  But if you do this, increase the max heap
-//        // size to the JVM (eg add -Xmx512m or -Xmx1g):
-//        //
-//        // iwc.setRAMBufferSizeMB(256.0);
-//
-        IndexWriter writer = new IndexWriter(dir, iwc);
-        indexDocs(writer, docDir);
-//
-//        // NOTE: if you want to maximize search performance,
-//        // you can optionally call forceMerge here.  This can be
-//        // a terribly costly operation, so generally it's only
-//        // worth it when your index is relatively static (ie
-//        // you're done adding documents to it):
-//        //
-//        // writer.forceMerge(1);
-//
-        writer.close();
 
-        // 2. query
-        String querystr = "children";//args.length > 0 ? args[0] : "lUciene";
-        
-//        System.out.println(querystr);
-//        querystr = querystr.replaceAll("[\\.,()\\\"]", " $0 ");
-//        System.out.println(querystr);
-//        querystr = querystr.replaceAll("/[()\"]/", " ");
-        
-//        StringTokenizer st = new StringTokenizer(querystr);
-//        while (st.hasMoreElements()) {
-//        	System.out.println(st.nextElement());
-//        }
 //        String corpusPath = "/home/murilo/Documentos/rm/project/data/postags/nlp-master/resources/corpora/brown/";
 //        
 //        PosTagger pos = new PosTagger();
@@ -168,7 +137,7 @@ public class Test {
         int hitsPerPage = 10;
         IndexReader reader = DirectoryReader.open(FSDirectory.open(Paths.get(indexPath)));
         IndexSearcher searcher = new IndexSearcher(reader);
-        searcher.setSimilarity(new BM25Similarity());
+//        searcher.setSimilarity(new BM25Similarity());
         
         DataTreater dt = new DataTreater();
 //        dt.buildCSV("/home/murilo/Documentos/rm/project/data/topics/train/",
@@ -177,176 +146,205 @@ public class Test {
 //        		reader);
 //        dt.saveData("/home/murilo/Documentos/rm/project/data/trainData.ser");
         dt.loadData("/home/murilo/Documentos/rm/project/data/trainData.ser");
-        
-        String originalQuery = "Document will discuss government assistance to Airbus Industrie or mention a trade dispute between Airbus and a US aircraft producer over the issue of subsidies";
-//        String originalQuery = "Identify what is being done or what ideas are being proposed to ensure that Social Security will not go broke?";
+//        String originalQuery = "Document will discuss government assistance to Airbus Industrie or mention a trade dispute between Airbus and a US aircraft producer over the issue of subsidies";
+//        String originalQuery = "Identify what is being done or what ideas are being proposed to ensure that Social Security will not go broke.";
 //        String originalQuery = "What is the difference between deduction and induction in the process of reasoning?";
-//        String originalQuery = "Where are the nuclear power plants in the U.S. and what has been their rate of production?";
+//        String originalQuery = "What are the prospects of the Quebec separatists achieving independence from the rest of Canada";
         //String originalQuery = "How widespread is the illegal disposal of medical waste in the U.S. and what is being done to combat this dumping?";
         //Identify what is being done or what ideas are being proposed to ensure that Social Security will not go broke
 //        System.in.
-        
-        ArrayList<ArrayList<Double> > dataPhrase = dt.analyzeSentence(originalQuery, reader);
-        
-        System.out.println("Phrase: " + dataPhrase.size());
-//        KNNClassifier clas = new KNNClassifier("/home/murilo/Documentos/rm/project/data/trainData.ser",10);
-        
-        LogisticRegressionClassifier clas = new LogisticRegressionClassifier();
+//        int ntop = 207;
+               
+//        else if (j==3) {
+//			double newLen = (sample.get(j) - minLen)/(maxLen-minLen);
+//			sample2.add(newLen);
+//		}
+//        LogisticRegressionClassifier clas = new LogisticRegressionClassifier();
 //        System.out.println("Training Model...");
 //        clas.train("/home/murilo/Documentos/rm/project/data/trainData.ser",
 //        		500000, .01);
 //        System.out.println("Done!");
 //        clas.saveModel("/home/murilo/Documentos/rm/project/data/logisticData.ser");
-        clas.loadModel("/home/murilo/Documentos/rm/project/data/logisticData.ser");
-        double threshold = .7;
-        ArrayList<Integer> results = clas.predictAll(dataPhrase,threshold);
+//        clas.loadModel("/home/murilo/Documentos/rm/project/data/logisticData.ser");
+//        double threshold = .8;
+        String testQueries = "/home/murilo/Documentos/rm/project/data/topics/test/with_relevance/testQueries";
+        double threshold = .45;
+//        File precisionFile = new File("/home/murilo/Documentos/rm/project/data/precision.csv");
+//        BufferedWriter writer = null;
+//        writer = new BufferedWriter(new FileWriter(precisionFile));
+//        writer.write("threshold,ntopic,p_at_10_orig,r_at_10_orig,p_at_10_mod,r_at_10_mod\n");
         
-        originalQuery = originalQuery.replaceAll("\\((.*?)\\)", "");//\\\"
+//        File mapFile = new File("/home/murilo/Documentos/rm/project/data/map.csv");
+//        BufferedWriter writerMap = null;
+//        writerMap = new BufferedWriter(new FileWriter(mapFile));
+//        writerMap.write("threshold,map_orig,map_mod\n");
+        
+        for (int th=1; th<10; th++) {
+        	KNNClassifier clas = new KNNClassifier("/home/murilo/Documentos/rm/project/data/trainData.ser",th);
+        	double map_mod = 0;
+        	double map_orig = 0;
+        	threshold += .05;
+        	System.out.println("Threshold: " + threshold);
+        	BufferedReader rdr = new BufferedReader(new FileReader(testQueries));
+        	String a;
+        	for(int nq = 0; nq < 50; nq++) {
+        		a = rdr.readLine();
+        		int ntop = Integer.parseInt(a);
+        		a = rdr.readLine();
+        		
+        		String oq = a;
+        		oq = oq.replaceAll("/", " or ");
+        		if (oq.endsWith(".")) {
+    				oq = oq.replaceAll("[\\.]", "");
+    				oq += ".";
+    			} else {
+    				oq = oq.replaceAll("[\\.]", "");
+    			}
+        		String regex = "(?<=[\\d])(,)(?=[\\d])";
+                Pattern p = Pattern.compile(regex);
+                Matcher m = p.matcher(oq);
+                oq = m.replaceAll("");
+        		String originalQuery = oq;
+//        		System.out.println(oq);
+        		System.out.println("Ntop: " + ntop);
+//        		writer.write(th + "," + ntop + ",");
+//        		originalQuery = originalQuery.replaceAll("[\\.?!,:;]", "");
+//        		originalQuery = originalQuery.replaceAll("/", " or ");
+////        		System.out.println("\nOld query: " + originalQuery);
+//        		originalQuery = originalQuery.toLowerCase();
+        		
+//        		System.out.println("Old query: " + originalQuery);
+        		ArrayList<ArrayList<Double> > dataPhrase = dt.analyzeSentence(originalQuery, reader);
+//        		originalQuery = originalQuery.replaceAll("\\((.*?)\\)", "");//\\\"
+//        		if (originalQuery.endsWith(".")) {
+//        			originalQuery = originalQuery.replaceAll("[\\.]", "");
+//        			originalQuery += ".";
+//        		}
+        		originalQuery = originalQuery.replaceAll("[\\.?!,\")(:;]", " $0 ");
+        		originalQuery = originalQuery.replaceAll("--", " -- ");
+        		originalQuery = originalQuery.replaceAll("( )\\1+", " ");
+        		originalQuery = originalQuery.toLowerCase();
+        		ArrayList<Integer> results = clas.predictAll(dataPhrase);//,threshold);
+        		
+        		originalQuery = originalQuery.replaceAll("[\\.?!,:;]", "");
+        		String[] terms = originalQuery.split(" ");
+        		
+        		String newQuery = "";
+        		//
+//        		System.out.println("terms: " + terms.length + "\nOld query: " + originalQuery);
+        		
+        		for (int i=0;i<results.size();i++) {
+//        			if (i < results.size()) {
+        			if ((!terms[i].equals(".")) && (!terms[i].equals(",")) &&
+    						(!terms[i].equals(":")) && (!terms[i].equals("?")) && 
+    						(!terms[i].equals("!")) && (!terms[i].equals("\"")) &&
+    						(!terms[i].equals("--")) && (!terms[i].equals(":")) &&
+    						(!terms[i].equals(";")) && (!terms[i].equals(")")) &&
+    						(!terms[i].equals("("))) {
+        				int go = results.get(i).intValue();
+            			if (go == 0) {
+            				newQuery += (terms[i] + " ");
+            			}
+        			}
+        				
+//        			}
+        			
+        		}
+        		
+//        		newQuery = "ideas social security broke";
+        		if (oq.endsWith("?")) {
+        			oq = oq.replaceAll("\\?", ".");
+        			oq += "?";
+        		} else {
+        			oq = oq.replaceAll("\\?", ".");
+        		}
+        		System.out.println("\nOld query: " + oq + "\nNew Query: " + newQuery);
+
+        		System.out.println("Results for original query:");
+        		Query q = new QueryParser("contents", analyzer).parse(oq);
+        		TopDocs docs = searcher.search(q, hitsPerPage);
+                ScoreDoc[] hits = docs.scoreDocs;
+                System.out.println("Found " + hits.length + " hits.");
+                double pat10 = 0;
+                double ap_orig = 0;
+                double ap_mod = 0;
+                for(int i=0;i<hits.length;++i) {
+                    int docId = hits[i].doc;
+                    Document d = searcher.doc(docId);
+                    String docPath = d.get("path");
+                    String[] paths = docPath.split("/");
+                    String docName = paths[paths.length-1];
+                    docName = docName.trim();
+                    int rel = 0;
+                    
+                    if (relevance.get(ntop).containsKey(docName))	rel = relevance.get(ntop).get(docName).intValue();
+//                    System.out.println((i + 1) + ". " + docName + " Relevance: " + rel);
+                    pat10 += rel;
+                    if (rel == 1) {
+                    	ap_orig += pat10/(i+1);
+                    }
+                }
+                double nrel = (double) getRelevants(ntop,relevance);
+                double rat10 = pat10/nrel;
+                pat10/=10;
+                System.out.println("P@10 for original: " + pat10);
+                System.out.println("R@10 for original: " + rat10);
+//                writer.write(pat10 + "," + rat10 + ",");
+                pat10 = 0;
+                System.out.println("Results for new query:");
+                if (newQuery.trim().isEmpty()) {
+                	for (int i=0; i<10; i++) {
+                		int rel = 0;
+                		pat10 += rel;
+                        if (rel == 1) {
+                        	ap_mod += pat10/(i+1);
+                        }
+                	}
+                } else {
+                	q = new QueryParser("contents", analyzer).parse(newQuery);
+            		docs = searcher.search(q, hitsPerPage);
+                    ScoreDoc[] hits2 = docs.scoreDocs;
+                    System.out.println("Found " + hits2.length + " hits.");
+                    for(int i=0;i<hits2.length;++i) {
+                        int docId = hits2[i].doc;
+                        Document d = searcher.doc(docId);
+                        String docPath = d.get("path");
+                        String[] paths = docPath.split("/");
+                        String docName = paths[paths.length-1];
+                        docName = docName.trim();
+                        int rel = 0;
+                        if (relevance.get(ntop).containsKey(docName))	rel = relevance.get(ntop).get(docName).intValue();
+//                        System.out.println((i + 1) + ". " + docName + " Relevance: " + rel);
+                        pat10 += rel;
+                        if (rel == 1) {
+                        	ap_mod += pat10/(i+1);
+                        }
+                    }
+                }
+        		
+                map_orig += ap_orig;
+                map_mod += ap_mod;
+                rat10 = pat10/nrel;
+                pat10/=10;
+                System.out.println("P@10 for modified: " + pat10);
+                System.out.println("R@10 for modified: " + rat10);
+//                writer.write(pat10 + "," + rat10 + "\n");
+        	}
+        	map_orig /= 50;
+        	map_mod /= 50;
+        	rdr.close();
+//        	writerMap.write(th + "," + map_orig + "," + map_mod + "\n");
+        }
+//        writer.close();
+//        writerMap.close();
+//        originalQuery = originalQuery.replaceAll("\\((.*?)\\)", "");//\\\"
 //		if (originalQuery.endsWith(".")) {
 //		originalQuery = originalQuery.replaceAll("[\\.]", "");
 //			originalQuery += ".";
 //		}
-		originalQuery = originalQuery.replaceAll("[\\.?!,]", "");
-		originalQuery = originalQuery.toLowerCase();
-		originalQuery = originalQuery.replaceAll("( )\\1+", " ");
+//        System.out.println("\nOld query: " + originalQuery);
 		
-		String[] terms = originalQuery.split(" ");
-		
-		String newQuery = "";
-		
-		System.out.println("terms: " + terms.length);
-		
-		for (int i=0;i<terms.length;i++) {
-			int go = results.get(i).intValue();
-			if (go == 0) {
-				newQuery += (terms[i] + " ");
-			}
-		}
-		
-		System.out.println("\nOld query: " + originalQuery + "\nNew Query: " + newQuery);
-        
-//        Term t = new Term("contents","children");
-//        int ch = reader.docFreq(t);
-//        System.out.println("Total doc freq of 'children': " + ch);
-//        
-//        long dictSize = reader.getSumTotalTermFreq("contents");
-//        System.out.println("Dictionary size: " + dictSize);
-//        
-//        long totalTermFreq = reader.totalTermFreq(t);
-//        System.out.println("Total term frequency of 'children': " + 
-//        		totalTermFreq);
-//        
-//        long docCount = reader.getDocCount("contents");
-//        System.out.println("Total doc count: " + docCount);
-//        
-//        long docCount2 = reader.getDocCount("path");
-//        System.out.println("Total doc count in 'path': " + docCount2);
-        // 4. display results
-//		System.out.println(relevance.size());
-		System.out.println("Results for original query:");
-		Query q = new QueryParser("contents", analyzer).parse(originalQuery);
-		TopDocs docs = searcher.search(q, hitsPerPage);
-        ScoreDoc[] hits = docs.scoreDocs;
-        System.out.println("Found " + hits.length + " hits.");
-        for(int i=0;i<hits.length;++i) {
-            int docId = hits[i].doc;
-            Document d = searcher.doc(docId);
-            String docPath = d.get("path");
-            String[] paths = docPath.split("/");
-            String docName = paths[paths.length-1];
-            docName = docName.trim();
-            int ntop = 209;
-//            System.out.println("Docname: " + docName);
-            int rel = 0;
-            if (relevance.get(ntop).containsKey(docName))	rel = relevance.get(ntop).get(docName).intValue();
-            System.out.println((i + 1) + ". " + docName + " Relevance: " + rel);
-        }
-        
-        System.out.println("Results for new query:");
-		q = new QueryParser("contents", analyzer).parse(newQuery);
-		docs = searcher.search(q, hitsPerPage);
-        ScoreDoc[] hits2 = docs.scoreDocs;
-        System.out.println("Found " + hits2.length + " hits.");
-        for(int i=0;i<hits2.length;++i) {
-            int docId = hits2[i].doc;
-            Document d = searcher.doc(docId);
-            String docPath = d.get("path");
-            String[] paths = docPath.split("/");
-            String docName = paths[paths.length-1];
-            docName = docName.trim();
-            int ntop = 209;
-//            System.out.println("Docname: " + docName);
-            int rel = 0;
-            if (relevance.get(ntop).containsKey(docName))	rel = relevance.get(ntop).get(docName).intValue();
-            System.out.println((i + 1) + ". " + docName + " Relevance: " + rel);
-        }
-
-
-        // reader can only be closed when there
-        // is no need to access the documents any more.
         reader.close();
     }
-    
-    
-    
-    static void indexDocs(final IndexWriter writer, Path path) throws IOException {
-        if (Files.isDirectory(path)) {
-//        	System.out.println("OLAR\n");
-          Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-              try {
-                indexDoc(writer, file, attrs.lastModifiedTime().toMillis());
-              } catch (IOException ignore) {
-                // don't index files that can't be read.
-              }
-              return FileVisitResult.CONTINUE;
-            }
-          });
-        } else {
-//        	System.out.println(path);
-          indexDoc(writer, path, Files.getLastModifiedTime(path).toMillis());
-        }
-      }
 
-    static void indexDoc(IndexWriter writer, Path file, long lastModified) throws IOException {
-        try (InputStream stream = Files.newInputStream(file)) {
-          // make a new, empty document
-          Document doc = new Document();
-          
-          // Add the path of the file as a field named "path".  Use a
-          // field that is indexed (i.e. searchable), but don't tokenize 
-          // the field into separate words and don't index term frequency
-          // or positional information:
-          Field pathField = new StringField("path", file.toString(), Field.Store.YES);
-          doc.add(pathField);
-          
-          // Add the last modified date of the file a field named "modified".
-          // Use a LongPoint that is indexed (i.e. efficiently filterable with
-          // PointRangeQuery).  This indexes to milli-second resolution, which
-          // is often too fine.  You could instead create a number based on
-          // year/month/day/hour/minutes/seconds, down the resolution you require.
-          // For example the long value 2011021714 would mean
-          // February 17, 2011, 2-3 PM.
-          doc.add(new LongPoint("modified", lastModified));
-          
-          // Add the contents of the file to a field named "contents".  Specify a Reader,
-          // so that the text of the file is tokenized and indexed, but not stored.
-          // Note that FileReader expects the file to be in UTF-8 encoding.
-          // If that's not the case searching for special characters will fail.
-          doc.add(new TextField("contents", new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))));
-          
-          if (writer.getConfig().getOpenMode() == OpenMode.CREATE) {
-            // New index, so we just add the document (no old document can be there):
-            System.out.println("adding " + file);
-            writer.addDocument(doc);
-          } else {
-            // Existing index (an old copy of this document may have been indexed) so 
-            // we use updateDocument instead to replace the old one matching the exact 
-            // path, if present:
-            System.out.println("updating " + file);
-            writer.updateDocument(new Term("path", file.toString()), doc);
-          }
-        }
-      }
 }

@@ -7,6 +7,7 @@ library(e1071)
 library(ggplot2)
 library(pROC)
 library(RSNNS)
+library(class)
 
 data <- read.csv("/home/murilo/Documentos/rm/project/data/data.csv")
 
@@ -23,14 +24,14 @@ for (i in 1:ncol(data)){
 discard_rate <- sum(data$get_out == 1)/nrow(data)
 cat(sprintf("Discard rate: %.3f\n",discard_rate))
 
-newData <- data[,1:3]
-for (col in 4:6){
+newData <- data[,1:4]
+for (col in 5:7){
   factors <- unique(data[,col])
   for (fact in factors){
     newData <- cbind(newData,1*(data[,col] == fact))
     isformer = ""
-    if (col==5){isformer="former_"}
-    if (col==6){isformer="next_"}
+    if (col==6){isformer="former_"}
+    if (col==7){isformer="next_"}
     names(newData)[ncol(newData)] <- strcat(isformer,fact)
   }
 }
@@ -43,6 +44,7 @@ data$get_out <- as.factor(data$get_out)
 data$idf <- (data$idf - min(data$idf))/(max(data$idf) - min(data$idf))
 data$mean_tf<- (data$mean_tf - min(data$mean_tf))/(max(data$mean_tf) - min(data$mean_tf))
 data$query_place <- (data$query_place - min(data$query_place))/(max(data$query_place) - min(data$query_place))
+data$query_length <- (data$query_length - min(data$query_length))/(max(data$query_length) - min(data$query_length))
 
 # Choosing which variables aren't good enough to stay
 # with Fisher's separability measure
@@ -54,15 +56,21 @@ for (i in 1:(ncol(data)-1)){
   square_means <- (mean(dC1) - mean(dCm1))^2
   var_sums <- var(dC1) + var(dCm1)
   sep <- square_means/var_sums
+  if (is.nan(sep)){
+    print(i)
+  }
   seps <- c(seps,sep)
 }
-
-best <- names(data)[order(seps,decreasing = T)[1:10]]
-best <- c(best,"get_out")
-gtfo <- which(!(names(data) %in% best))
-# q <- quantile(seps)
+seps[is.nan(seps)] <- 0
+# best <- names(data)[order(seps,decreasing = T)[1:30]]
+# best <- c(best,"get_out")
+# gtfo <- which(!(names(data) %in% best))
+q <- quantile(seps)
 # gtfo <- which(seps<q[[4]])#order(seps,decreasing=T)[-(1:10)]
+gtfo <- which(seps<.05)
 data <- data[,-gtfo]
+print(paste0('"',paste(names(data),collapse='","'),'"'),quote = F)
+
 
 Feat <- 1:(ncol(newData)-1)
 Separation <- seps[order(seps)]

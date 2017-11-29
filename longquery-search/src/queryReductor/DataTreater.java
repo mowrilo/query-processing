@@ -17,6 +17,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.ArrayList;
 import java.util.Comparator;
 
@@ -31,7 +33,7 @@ import queryReductor.PosTagger;
 [11] "np"             "vbn"            "ben"            "ber"            "rb"            
 [16] "cs"             "wps"            "hv"             "ap"             "to"            
 [21] "dt"             "md"             "former_<s>"     "former_jj"      "former_in"     
-[26] "former_at"      "former_hvz"     "former_cc"      "former_nns"     "former_virgula"
+[26] "former_at"      "former_hvz"     "former_cc"      "former_nns"     "former_comma"
 [31] "former_doz"     "former_ber"     "former_wps"     "former_hv"      "former_np"     
 [36] "former_to"      "former_."       "former_md"      "next_nn"        "next_at"       
 [41] "next_."         "next_vbn"       "next_ben"       "next_pp$"       "next_wps"      
@@ -40,7 +42,6 @@ import queryReductor.PosTagger;
 
 public class DataTreater {
 	
-//	private long docCount;
 	private ArrayList<ArrayList<Double> > data;
 	private PosTagger pos;
 	private String[] features;
@@ -48,6 +49,8 @@ public class DataTreater {
 	private double maxTf;
 	private double maxPos;
 	private double minPos;
+	private double minLen;
+	private double maxLen;
 	
 	public DataTreater() throws ClassNotFoundException {
 		pos = new PosTagger();
@@ -58,13 +61,19 @@ public class DataTreater {
 //    		 		"np", "vbn","ben","ber","rb",
 //    		 		"cs", "wps","hv", "ap", "to",
 //    		 		"dt", "md", "former_<s>","former_jj","former_in", 
-//    		 		"former_at","former_hvz","former_cc","former_nns","former_virgula",
+//    		 		"former_at","former_hvz","former_cc","former_nns","former_comma",
 //    		 		"former_doz","former_ber","former_wps","former_hv","former_np",
 //    		 		"former_to","former_.","former_md","next_nn","next_at",
 //    		 		"next_.","next_vbn","next_ben","next_pp$","next_wps",
 //    				"next_ap"};
-    	features = new String[] {"nn","vb","next_.",
-    			 "former_in","former_nns","np","wdt"};
+//    	features = new String[] {"wdt" , "nn" , "jj" , "in" , "at" , "nns" ,
+//    			"hvz" , "cc" , "vb" , "np" , "vbn" , "wrb" , "ben" , "ber" ,
+//    			"cs" , "wps" , "hv" , "ap" , "md" , "cd" , "former_<s>" ,
+//    			"former_jj" , "former_in" , "former_at" , "former_hvz" ,
+//    			"former_vb" , "former_nns" , "former_comma" , "former_ber" ,
+//    			"former_wps" , "former_np" , "former_." , "next_jj" , "next_at" ,
+//    			"next_." , "next_cc" , "next_wrb" , "next_wps" , "next_vb" , "next_wdt"};
+    	features = new String[] {"nn","former_<s>","former_nns","next_."};
     	
 	}
 	
@@ -73,14 +82,13 @@ public class DataTreater {
 		long docCount = reader.getDocCount("contents");
         File[] files = folder.listFiles();
         String fileName = "";
-//        PosTagger pos = new PosTagger();
-//    	pos.loadModel("/home/murilo/Documentos/rm/project/data/POSModel.ser");
-//        long docCount = reader.getDocCount("contents");
         
         this.maxIdf = 0;
         this.maxPos = 0;
         this.minPos = 999999;
         this.maxTf = 0;
+        this.maxLen = 0;
+        this.minLen = 999999;
         
         for (int i=0; i<files.length;i++) {
         	fileName = files[i].getName();
@@ -102,22 +110,35 @@ public class DataTreater {
         			}
 //        			System.out.println("Title: " + title + 
 //        					" Description: " + desc);
-        			desc = desc.replaceAll("\\((.*?)\\)", "");//\\\"
-        			if (desc.endsWith(".")) {
+        			System.out.println(desc);
+        			desc = desc.replaceAll("/", " or ");
+            		if (desc.endsWith(".")) {
         				desc = desc.replaceAll("[\\.]", "");
         				desc += ".";
+        			} else {
+        				desc = desc.replaceAll("[\\.]", "");
         			}
-        			desc = desc.replaceAll("[\\.?!,]", " $0 ");
+            		String regex = "(?<=[\\d])(,)(?=[\\d])";
+                    Pattern p = Pattern.compile(regex);
+                    Matcher m = p.matcher(desc);
+                    desc = m.replaceAll("");
+                    
+                    desc = desc.replaceAll("[\\.?!,\")(:;]", " $0 ");
+            		desc = desc.replaceAll("--", " -- ");
+            		desc = desc.toLowerCase();
+            		System.out.println(desc);
         			title = title.toLowerCase();
-        			desc = desc.toLowerCase();
+//        			desc = desc.toLowerCase();
         			desc = desc.replaceAll("( )\\1+", " ");
         			String tags = this.pos.tag(desc);
         			System.out.println(tags);
 //        			StringTokenizer tokens = new StringTokenizer(desc);
 //        			StringTokenizer posTags = new StringTokenizer(tags);
+        			System.out.println(desc);
         			String[] tokens = desc.split(" ");
+//        			for (int p1=0; p1<tokens.length; p1++) System.out.println(tokens[p1] + "\n");
         			String[] posTags = tags.split(" ");
-//        			System.out.println("tokens " + tokens.countTokens() + " tags " + posTags.countTokens());
+        			System.out.println("tokens " + tokens.length + " tags " + posTags.length);
         			String lastTag = "<s>";
         			//"idf,total_tf,query_place,pos,last_pos,next_pos"
         			int place = 0;
@@ -130,9 +151,12 @@ public class DataTreater {
         				String tg = posTags[ii];//posTags.nextElement().toString();
         				tok = tok.trim();
         				tg = tg.trim();
-//        				tg = tg.replaceAll("[$]", "");
         				if ((!tok.equals(".")) && (!tok.equals(",")) &&
-        						(!tok.equals(":")) && (!tok.equals("?")) && (!tok.equals("!"))) {
+        						(!tok.equals(":")) && (!tok.equals("?")) && 
+        						(!tok.equals("!")) && (!tok.equals("\"")) &&
+        						(!tok.equals("--")) && (!tok.equals(":")) &&
+        						(!tok.equals(";")) && (!tok.equals(")")) &&
+        						(!tok.equals("("))) {
 //        					writer.write("\n");
             				ArrayList<Double> vec = new ArrayList<Double>();
             				
@@ -150,7 +174,7 @@ public class DataTreater {
             		        if (df == 0) {
             		        	termsPerDoc = 0.;
             		        }
-//            		        vec.add(termsPerDoc);
+            		        vec.add(termsPerDoc);
             		        
             		        if (termsPerDoc > this.maxTf)	this.maxTf = termsPerDoc;
             		        
@@ -160,9 +184,14 @@ public class DataTreater {
             				if (queryPlace > this.maxPos)	this.maxPos = queryPlace;
             				if (queryPlace < this.minPos)	this.minPos = queryPlace;
        
+            				double queryLength = (double) phraseSize;
+            				vec.add(queryLength);
+            				
+            				if (queryLength > this.maxLen)	this.maxLen = queryLength;
+            				if (queryLength < this.minLen)	this.minLen = queryLength;
             				
             				if (lastTag.equals(",")) {
-            					lastTag = "virgula";
+            					lastTag = "comma";
             				}
             				
             				String nextTag;
@@ -173,15 +202,15 @@ public class DataTreater {
             				}
             				
             				if (nextTag.equals(",")) {
-            					nextTag = "virgula";
+            					nextTag = "comma";
             				}
             				
-            				if (tok.endsWith("s")) {
-            					tok = tok.substring(0, tok.length()-1);
-            				} 
-            				if (tok.endsWith("ing")) {
-            					tok = tok.substring(0, tok.length()-3);
-            				}
+//            				if (tok.endsWith("s")) {
+//            					tok = tok.substring(0, tok.length()-1);
+//            				} 
+//            				if (tok.endsWith("ing")) {
+//            					tok = tok.substring(0, tok.length()-3);
+//            				}
             				
             				
             				double getOut = 1;
@@ -241,6 +270,10 @@ public class DataTreater {
 			out.writeDouble(maxPos);
 			out.writeDouble(maxTf);
 			out.writeDouble(minPos);
+			out.writeDouble(maxLen);
+			out.writeDouble(minLen);
+			System.out.println("max len: "  + maxLen +
+					" minLen: " + minLen);
 			out.close();
 			fileOut.close();
 			System.out.println("Saved model in file " + path);
@@ -262,6 +295,8 @@ public class DataTreater {
 			this.maxPos = in.readDouble();
 			this.maxTf = in.readDouble();
 			this.minPos = in.readDouble();
+			this.maxLen = in.readDouble();
+			this.minLen = in.readDouble();
 			in.close();
 			fileIn.close();
 			
@@ -273,16 +308,34 @@ public class DataTreater {
 	public ArrayList<ArrayList<Double> > analyzeSentence(String sentence, IndexReader reader) 
 			throws IOException {
 		long docCount = reader.getDocCount("contents");
-		sentence = sentence.replaceAll("\\((.*?)\\)", "");//\\\"
+//		sentence = sentence.replaceAll("\\((.*?)\\)", "");//\\\"
+//		if (sentence.endsWith(".")) {
+//			sentence = sentence.replaceAll("[\\.]", "");
+//			sentence += ".";
+//		}
+//		sentence = sentence.replaceAll("[\\.?!,]", " $0 ");
+//		sentence = sentence.toLowerCase();
+//		sentence = sentence.replaceAll("( )\\1+", " ");
+		
+		sentence = sentence.replaceAll("/", " or ");
 		if (sentence.endsWith(".")) {
 			sentence = sentence.replaceAll("[\\.]", "");
 			sentence += ".";
+		} else {
+			sentence = sentence.replaceAll("[\\.]", "");
 		}
-		sentence = sentence.replaceAll("[\\.?!,]", " $0 ");
-		sentence = sentence.toLowerCase();
+		String regex = "(?<=[\\d])(,)(?=[\\d])";
+        Pattern p = Pattern.compile(regex);
+        Matcher m = p.matcher(sentence);
+        sentence = m.replaceAll("");
+        
+        sentence = sentence.replaceAll("[\\.?!,\")(:;]", " $0 ");
+		sentence = sentence.replaceAll("--", " -- ");
 		sentence = sentence.replaceAll("( )\\1+", " ");
+		sentence = sentence.toLowerCase();
 		
 		String taggedSentence = this.pos.tag(sentence);
+//		System.out.println(taggedSentence);
 		ArrayList<ArrayList<Double> > dataMatrix = 
 				new ArrayList<ArrayList<Double> >();
 		
@@ -299,7 +352,11 @@ public class DataTreater {
 			tok = tok.trim();
 			tg = tg.trim();
 			if ((!tok.equals(".")) && (!tok.equals(",")) &&
-					(!tok.equals(":")) && (!tok.equals("?")) && (!tok.equals("!"))) {
+					(!tok.equals(":")) && (!tok.equals("?")) && 
+					(!tok.equals("!")) && (!tok.equals("\"")) &&
+					(!tok.equals("--")) && (!tok.equals(":")) &&
+					(!tok.equals(";")) && (!tok.equals(")")) &&
+					(!tok.equals("("))) {
 //				System.out.println("tok: "+tok);
 				ArrayList<Double> thisSample = new ArrayList<Double>();
 				Term t = new Term("contents",tok);
@@ -318,14 +375,18 @@ public class DataTreater {
 		        	termsPerDoc = 0.;
 		        }
 		        termsPerDoc = termsPerDoc/maxTf;
-//		        thisSample.add(termsPerDoc);
+		        thisSample.add(termsPerDoc);
 		        
 		        double queryPlace = ((double) place)/((double) sentSize);
 		        queryPlace = (queryPlace - minPos)/(maxPos-minPos);
 //		        thisSample.add(queryPlace);
+		        
+		        double queryLength = (double) sentSize;
+		        queryLength = (queryLength - minLen)/(maxLen-minLen);
+		        thisSample.add(queryLength);
 				
 				if (lastTag.equals(",")) {
-					lastTag = "virgula";
+					lastTag = "comma";
 				}
 				
 				String nextTag;
@@ -336,7 +397,7 @@ public class DataTreater {
 				}
 				
 				if (nextTag.equals(",")) {
-					nextTag = "virgula";
+					nextTag = "comma";
 				}
 				
 				double mult = 1;
@@ -401,7 +462,7 @@ public class DataTreater {
         			}
 //        			System.out.println("Title: " + title + 
 //        					" Description: " + desc);
-        			desc = desc.replaceAll("\\((.*?)\\)", "");//\\\"
+//        			desc = desc.replaceAll("\\((.*?)\\)", "");//\\\"
         			if (desc.endsWith(".")) {
         				desc = desc.replaceAll("[\\.]", "");
         				desc += ".";
@@ -411,7 +472,7 @@ public class DataTreater {
         			desc = desc.toLowerCase();
         			desc = desc.replaceAll("( )\\1+", " ");
         			String tags = this.pos.tag(desc);
-        			System.out.println(tags);
+//        			System.out.println(tags);
 //        			StringTokenizer tokens = new StringTokenizer(desc);
 //        			StringTokenizer posTags = new StringTokenizer(tags);
         			String[] tokens = desc.split(" ");
@@ -451,10 +512,13 @@ public class DataTreater {
             		        double queryPlace = ((double) place)/((double) phraseSize);
             				writer.write(String.valueOf(queryPlace)+",");
             		        
+            				double queryLength = (double) phraseSize;
+            				writer.write(String.valueOf(queryLength)+",");
+            				
             				writer.write(tg+",");
             				
             				if (lastTag.equals(",")) {
-            					lastTag = "virgula";
+            					lastTag = "comma";
             				}
             				
             				writer.write(lastTag+",");
@@ -467,7 +531,7 @@ public class DataTreater {
             				}
             				
             				if (nextTag.equals(",")) {
-            					nextTag = "virgula";
+            					nextTag = "comma";
             				}
             				
             				writer.write(nextTag+",");

@@ -121,7 +121,7 @@ public class KNNClassifier {
 		}
 //		System.out.println("Aqui2!!\n\n");
 		
-		if (sumOfLabels >= (((double) k)*.8)) {
+		if (sumOfLabels > (((double) k)*.5)) {
 //			System.out.println("Caiu fora!");
 			return 1;
 		} else {
