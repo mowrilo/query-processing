@@ -3,11 +3,9 @@ package queryReductor;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.util.Vector;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.lang.Math.*;
 import queryReductor.Pair;
 
 public class KNNClassifier {
@@ -49,6 +47,7 @@ public class KNNClassifier {
 		this.data = data2;
 	}
 	
+	@SuppressWarnings("unchecked")
 	protected void loadData(String file) throws ClassNotFoundException {
 			try {
 				FileInputStream fileIn = new FileInputStream(file);
@@ -58,11 +57,6 @@ public class KNNClassifier {
 				this.maxPos = in.readDouble();
 				this.maxTf = in.readDouble();
 				this.minPos = in.readDouble();
-				
-	//			System.out.println("Max IDF: " + maxIdf +
-	//					"\nMax Pos: " + maxPos + 
-	//					"\nMax Tf: " + maxTf + 
-	//					"\nMin Pos: " + minPos);
 				in.close();
 				fileIn.close();
 			} catch(IOException e) {
@@ -73,13 +67,10 @@ public class KNNClassifier {
 	protected double getEuclideanDistance(ArrayList<Double> sample1, ArrayList<Double> sample2) {
 		int size = sample1.size();
 		double dist = 0;
-		for (int i=0; i<size; i++) { //size-1 because the last element is the Target value
+		for (int i=0; i<size; i++) {
 			double diff = sample1.get(i).doubleValue() - sample2.get(i).doubleValue();
-//			if (i == 0) {System.out.println("Samples idf: " + sample1.get(i).doubleValue() + 
-//					" and " + sample2.get(i).doubleValue());}
 			dist += Math.pow(diff, 2);
 		}
-//		System.out.println("Dist: " + dist);
 		dist = Math.sqrt(dist);
 		return dist;
 	}
@@ -87,45 +78,28 @@ public class KNNClassifier {
 	public int predict(ArrayList<Double> sample) {
 		
 		ArrayList<Pair> distances = new ArrayList<Pair>();
-//		System.out.println("Sample Idf: " + sample.get(0).doubleValue());
 		int dataSize = data.size();
-//		System.out.println("DataSize: " + dataSize);
 		for (int i=0; i<dataSize; i++) {
 			ArrayList<Double> trainSample = data.get(i);
 			double dist = getEuclideanDistance(sample,trainSample);
-//			System.out.println("Class: " + trainSample.get(trainSample.size()-1));
-//			System.out.println("Distance: " + dist);
 			Pair thisSample = new Pair(dist,i);
 			distances.add(thisSample);
 		}
 		
-//		Collections.sort(distances, new Comparator<Pair>(){
-//            public int compare(Pair p1, Pair p2) {
-//            	Double d = new Double(p1.getFirst()- p2.getFirst());
-//            	int ret = d.intValue();
-//                return ret;
-//            }
-//        });
-		
 		Comparator<Pair> comparator = new PairComparator();
         Collections.sort(distances, comparator);
-//        System.out.println("Aqui1!!"+ distances.size() + "\n\n");
         
 		double sumOfLabels = 0;
 		for (int i=0; i<k; i++) {
 			int index = distances.get(i).getSecond();
 			ArrayList<Double> smp = data.get(index);
 			double label = smp.get(smp.size()-1);
-//			System.out.println("Label: " + label);
 			sumOfLabels += label;
 		}
-//		System.out.println("Aqui2!!\n\n");
 		
 		if (sumOfLabels > (((double) k)*.5)) {
-//			System.out.println("Caiu fora!");
 			return 1;
 		} else {
-//			System.out.println("Ficou!");
 			return 0;
 		}
 		
@@ -146,8 +120,6 @@ public class KNNClassifier {
 
 class PairComparator implements Comparator<Pair> {
     public int compare(Pair p1, Pair p2) {
-//    	Double d = new Double(p1.getFirst() - p2.getFirst());
-//        return d.intValue();
     	if (p1.getFirst() > p2.getFirst())	return 1;
     	if (p2.getFirst() > p1.getFirst())	return -1;
     	return 0;

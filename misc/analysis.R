@@ -62,12 +62,12 @@ for (i in 1:(ncol(data)-1)){
   seps <- c(seps,sep)
 }
 seps[is.nan(seps)] <- 0
-# best <- names(data)[order(seps,decreasing = T)[1:30]]
+best <- names(data)[order(seps,decreasing = T)[1:30]]
 # best <- c(best,"get_out")
 # gtfo <- which(!(names(data) %in% best))
 q <- quantile(seps)
 # gtfo <- which(seps<q[[4]])#order(seps,decreasing=T)[-(1:10)]
-gtfo <- which(seps<.05)
+gtfo <- which(seps<.025)
 data <- data[,-gtfo]
 print(paste0('"',paste(names(data),collapse='","'),'"'),quote = F)
 

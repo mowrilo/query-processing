@@ -1,13 +1,13 @@
 package queryReductor;
 
 import java.util.ArrayList;
-import java.util.Vector;
+//import java.util.Vector;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.lang.Math.*;
+//import java.lang.Math.*;
 
 public class LogisticRegressionClassifier {
 	
@@ -30,7 +30,6 @@ public class LogisticRegressionClassifier {
 	
 	protected ArrayList<Double> gradient(){
 		ArrayList<Double> grad = new ArrayList<Double>();
-//		for (int i=0; i<params.size(); i++) {
 		double[] gradElements = new double[params.size()];
 		for (int j=0; j<data.size(); j++) {
 			ArrayList<Double> sample = data.get(j);
@@ -58,13 +57,12 @@ public class LogisticRegressionClassifier {
 			}
 		}
 		for (int i=0;i<gradElements.length;i++) {
-//			System.out.println("Gradient "+ i +": " + gradElements[i]);
 			grad.add(gradElements[i]);
 		}
-//		}
 		return grad;
 	}
 	
+	@SuppressWarnings("unchecked")
 	protected void loadData(String file) throws ClassNotFoundException {
 		try {
 			FileInputStream fileIn = new FileInputStream(file);
@@ -83,6 +81,7 @@ public class LogisticRegressionClassifier {
 		}
 	}
 	
+	@SuppressWarnings("unchecked")
 	public void loadModel(String file) throws ClassNotFoundException {
 		try {
 			FileInputStream fileIn = new FileInputStream(file);
@@ -121,14 +120,8 @@ public class LogisticRegressionClassifier {
 					double newTf = sample.get(j)/maxTf;
 					sample2.add(newTf);
 				} 
-//				else if (j==2) {
-//					double newPos = (sample.get(j) - minPos)/(maxPos-minPos);
-//					sample2.add(newPos);
-//				} 
 				else if (j==2) {
 					double newLen = (sample.get(j) - minLen)/(maxLen-minLen);
-//					System.out.println("max len: "  + maxLen +
-//							" minLen: " + minLen);
 					sample2.add(newLen);
 				} else {
 					sample2.add(sample.get(j));
@@ -160,7 +153,7 @@ public class LogisticRegressionClassifier {
 	
 	protected void initParams(int size) {
 		for (int i=0; i<size; i++) {
-			double number = .001;//Math.random();
+			double number = .001;
 			params.add(number);
 		}
 	}
@@ -170,28 +163,21 @@ public class LogisticRegressionClassifier {
 		normalizeData();
 		int size = data.get(0).size();
 		initParams(size);
-//		System.out.println("Batman size: " + params.size());
-		double diff = 1;
+//		double diff = 1;
 		double lastValue = 10000;
-//		for (int i=0;i<maxIter;i++) {
 		int iter = 0;
 		while (true) {
 			double thisDiff = 0;
 			double newValue=0;
 			ArrayList<Double> grad = gradient();
 			for (int j=0;j<params.size();j++) {
-//				if (!params.get(j).isNaN())	System.out.println("param value " + params.get(j));
 				newValue = params.get(j).doubleValue() + 
 						step*grad.get(j).doubleValue();
 				thisDiff += Math.pow((params.get(j).doubleValue() - newValue),2);
 				params.set(j, Double.valueOf(newValue));
 			}
-//			System.out.println("");
 			thisDiff /= params.size();
-//			if (thisDiff < (.001*diff))	break;
 			if (thisDiff < (.000001*lastValue)) break;
-//			if (!Double.isNaN(newValue))	System.out.println(newValue);
-//			diff = thisDiff;
 			lastValue = newValue;
 			iter++;
 		}
@@ -205,25 +191,20 @@ public class LogisticRegressionClassifier {
 					params.get(i).doubleValue());
 		}
 		net += params.get(params.size()-1).doubleValue();
-//		System.out.println("net value: " + net);
 		double logVal = logisticFunction(net);
 		int pred = 0;
-//		System.out.println("logistic value: " + logVal);
 		if (logVal > threshold)	pred = 1;
-//		if (sample.get(4).doubleValue() == 1)	pred = 0;
 		return pred;
 	}
 	
 	public ArrayList<Integer> predictAll(ArrayList<ArrayList<Double> > dataToPredict,
 			double threshold){
 		ArrayList<Integer> preds = new ArrayList<Integer>();
-		System.out.println("Size1: " + dataToPredict.size());
 		for (int i=0; i<dataToPredict.size(); i++) {
 			ArrayList<Double> sample = dataToPredict.get(i);
 			int pred = predict(sample,threshold);
 			preds.add(pred);
 		}
-		System.out.println("Size1: " + preds.size());
 		return preds;
 	}
 }

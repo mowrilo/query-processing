@@ -4,23 +4,23 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+//import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Map;
-import java.util.StringTokenizer;
+//import java.nio.charset.Charset;
+//import java.nio.charset.StandardCharsets;
+//import java.nio.file.Files;
+//import java.nio.file.Paths;
+//import java.util.Map;
+//import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.ArrayList;
-import java.util.Comparator;
+//import java.util.Comparator;
 
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
@@ -52,29 +52,11 @@ public class DataTreater {
 	private double minLen;
 	private double maxLen;
 	
-	public DataTreater() throws ClassNotFoundException {
+	public DataTreater(String posFile) throws ClassNotFoundException {
 		pos = new PosTagger();
-    	pos.loadModel("/home/murilo/Documentos/rm/project/data/POSModel.ser");
+    	pos.loadModel(posFile);
 		this.data = new ArrayList<ArrayList<Double> >();
-//    	features = new String[]{"wdt","nn",
-//    		 		"jj", "in", "hvz","cc", "vb",
-//    		 		"np", "vbn","ben","ber","rb",
-//    		 		"cs", "wps","hv", "ap", "to",
-//    		 		"dt", "md", "former_<s>","former_jj","former_in", 
-//    		 		"former_at","former_hvz","former_cc","former_nns","former_comma",
-//    		 		"former_doz","former_ber","former_wps","former_hv","former_np",
-//    		 		"former_to","former_.","former_md","next_nn","next_at",
-//    		 		"next_.","next_vbn","next_ben","next_pp$","next_wps",
-//    				"next_ap"};
-//    	features = new String[] {"wdt" , "nn" , "jj" , "in" , "at" , "nns" ,
-//    			"hvz" , "cc" , "vb" , "np" , "vbn" , "wrb" , "ben" , "ber" ,
-//    			"cs" , "wps" , "hv" , "ap" , "md" , "cd" , "former_<s>" ,
-//    			"former_jj" , "former_in" , "former_at" , "former_hvz" ,
-//    			"former_vb" , "former_nns" , "former_comma" , "former_ber" ,
-//    			"former_wps" , "former_np" , "former_." , "next_jj" , "next_at" ,
-//    			"next_." , "next_cc" , "next_wrb" , "next_wps" , "next_vb" , "next_wdt"};
-    	features = new String[] {"nn","former_<s>","former_nns","next_."};
-    	
+    	features = new String[] {"nn","former_<s>","former_nns","next_."};    	
 	}
 	
 	public void buildData(String path, IndexReader reader) throws IOException, ClassNotFoundException {
@@ -92,10 +74,8 @@ public class DataTreater {
         
         for (int i=0; i<files.length;i++) {
         	fileName = files[i].getName();
-        	System.out.println(fileName);
         	BufferedReader rdr = new BufferedReader(new FileReader(path + fileName));
         	String line = rdr.readLine();
-//        	int waitingTitle = 1;
         	while (line != null) {
         		if (line.startsWith("<title>")) {
         			line = line.replaceAll("<title>", "");
@@ -108,9 +88,6 @@ public class DataTreater {
         				desc += (line + " ");
         				line = rdr.readLine();
         			}
-//        			System.out.println("Title: " + title + 
-//        					" Description: " + desc);
-        			System.out.println(desc);
         			desc = desc.replaceAll("/", " or ");
             		if (desc.endsWith(".")) {
         				desc = desc.replaceAll("[\\.]", "");
@@ -126,29 +103,18 @@ public class DataTreater {
                     desc = desc.replaceAll("[\\.?!,\")(:;]", " $0 ");
             		desc = desc.replaceAll("--", " -- ");
             		desc = desc.toLowerCase();
-            		System.out.println(desc);
         			title = title.toLowerCase();
-//        			desc = desc.toLowerCase();
         			desc = desc.replaceAll("( )\\1+", " ");
         			String tags = this.pos.tag(desc);
-        			System.out.println(tags);
-//        			StringTokenizer tokens = new StringTokenizer(desc);
-//        			StringTokenizer posTags = new StringTokenizer(tags);
-        			System.out.println(desc);
         			String[] tokens = desc.split(" ");
-//        			for (int p1=0; p1<tokens.length; p1++) System.out.println(tokens[p1] + "\n");
         			String[] posTags = tags.split(" ");
-        			System.out.println("tokens " + tokens.length + " tags " + posTags.length);
         			String lastTag = "<s>";
-        			//"idf,total_tf,query_place,pos,last_pos,next_pos"
         			int place = 0;
-        			int phraseSize = tokens.length;//tokens.countTokens();
-//        			while (tokens.hasMoreElements()) {
+        			int phraseSize = tokens.length;
         			for (int ii=0; ii<phraseSize; ii++) {
         				place++;
-//        				System.out.println(tokens[ii]);
-        				String tok = tokens[ii];//tokens.nextElement().toString();
-        				String tg = posTags[ii];//posTags.nextElement().toString();
+        				String tok = tokens[ii];
+        				String tg = posTags[ii];
         				tok = tok.trim();
         				tg = tg.trim();
         				if ((!tok.equals(".")) && (!tok.equals(",")) &&
@@ -157,14 +123,12 @@ public class DataTreater {
         						(!tok.equals("--")) && (!tok.equals(":")) &&
         						(!tok.equals(";")) && (!tok.equals(")")) &&
         						(!tok.equals("("))) {
-//        					writer.write("\n");
             				ArrayList<Double> vec = new ArrayList<Double>();
             				
             				Term t = new Term("contents",tok);
             		        int df = reader.docFreq(t);
             		        double idf = 0;
             		        if (df > 0)	idf = Math.log(((double) docCount)/((double) df));
-//            		        System.out.println("IDF: " + idf);
             		        vec.add(idf);
             		        
             		        if (idf > this.maxIdf)	this.maxIdf = idf;
@@ -203,31 +167,16 @@ public class DataTreater {
             				
             				if (nextTag.equals(",")) {
             					nextTag = "comma";
-            				}
-            				
-//            				if (tok.endsWith("s")) {
-//            					tok = tok.substring(0, tok.length()-1);
-//            				} 
-//            				if (tok.endsWith("ing")) {
-//            					tok = tok.substring(0, tok.length()-3);
-//            				}
-            				
+            				}            				
             				
             				double getOut = 1;
             				if (title.contains(tok)) {
             					getOut = 0;
             				}
-            				
-            				double mult = 1;
             				for (String feat: features) {
             					double isThis = 0;
             					if (tg.equals(feat)) {
             						isThis = 1;
-            						if (tg.equals("nn") || tg.equals("np")){
-//            							if (getOut == 0) {
-            								isThis = isThis*mult;
-//            							}
-            						}
             					}
             					else if (feat.startsWith("former_")) {
             						String[] featSplit = feat.split("_");
@@ -244,12 +193,7 @@ public class DataTreater {
             					vec.add(isThis);
             				}
             				
-//            				writer.write(tg+",");
-//            				writer.write(lastTag+",");
-//            				writer.write(nextTag+",");
-            				
             				vec.add(getOut);
-//            				writer.write(String.valueOf(getOut)+"\n");
             				this.data.add(vec);
         				}
         				lastTag = tg;
@@ -272,25 +216,19 @@ public class DataTreater {
 			out.writeDouble(minPos);
 			out.writeDouble(maxLen);
 			out.writeDouble(minLen);
-			System.out.println("max len: "  + maxLen +
-					" minLen: " + minLen);
 			out.close();
 			fileOut.close();
-			System.out.println("Saved model in file " + path);
 		} catch(IOException e) {
 			e.printStackTrace();
 		}
 	}
 	
+	@SuppressWarnings("unchecked")
 	public void loadData(String file) throws ClassNotFoundException {
 		try {
 			FileInputStream fileIn = new FileInputStream(file);
 			ObjectInputStream in = new ObjectInputStream(fileIn);
 			this.data = (ArrayList<ArrayList<Double> >) in.readObject();
-//			out.writeDouble(maxIdf);
-//			out.writeDouble(maxPos);
-//			out.writeDouble(maxTf);
-//			out.writeDouble(minPos);
 			this.maxIdf = in.readDouble();
 			this.maxPos = in.readDouble();
 			this.maxTf = in.readDouble();
@@ -308,14 +246,6 @@ public class DataTreater {
 	public ArrayList<ArrayList<Double> > analyzeSentence(String sentence, IndexReader reader) 
 			throws IOException {
 		long docCount = reader.getDocCount("contents");
-//		sentence = sentence.replaceAll("\\((.*?)\\)", "");//\\\"
-//		if (sentence.endsWith(".")) {
-//			sentence = sentence.replaceAll("[\\.]", "");
-//			sentence += ".";
-//		}
-//		sentence = sentence.replaceAll("[\\.?!,]", " $0 ");
-//		sentence = sentence.toLowerCase();
-//		sentence = sentence.replaceAll("( )\\1+", " ");
 		
 		sentence = sentence.replaceAll("/", " or ");
 		if (sentence.endsWith(".")) {
@@ -335,7 +265,6 @@ public class DataTreater {
 		sentence = sentence.toLowerCase();
 		
 		String taggedSentence = this.pos.tag(sentence);
-//		System.out.println(taggedSentence);
 		ArrayList<ArrayList<Double> > dataMatrix = 
 				new ArrayList<ArrayList<Double> >();
 		
@@ -357,17 +286,13 @@ public class DataTreater {
 					(!tok.equals("--")) && (!tok.equals(":")) &&
 					(!tok.equals(";")) && (!tok.equals(")")) &&
 					(!tok.equals("("))) {
-//				System.out.println("tok: "+tok);
 				ArrayList<Double> thisSample = new ArrayList<Double>();
 				Term t = new Term("contents",tok);
 		        int df = reader.docFreq(t);
 		        double idf = 0;
-//		        System.out.println("DocCount: " + docCount + 
-//		        		" df: " + df);
 		        if (df > 0)	idf = Math.log(((double) docCount)/((double) df));
 		        idf = idf/maxIdf;
 		        thisSample.add(idf);
-//		        System.out.println("Idf: " + idf);
 		        
 		        long totalTermFreq = reader.totalTermFreq(t);
 		        double termsPerDoc = ((double) totalTermFreq)/((double) df);
@@ -379,7 +304,6 @@ public class DataTreater {
 		        
 		        double queryPlace = ((double) place)/((double) sentSize);
 		        queryPlace = (queryPlace - minPos)/(maxPos-minPos);
-//		        thisSample.add(queryPlace);
 		        
 		        double queryLength = (double) sentSize;
 		        queryLength = (queryLength - minLen)/(maxLen-minLen);
@@ -423,7 +347,6 @@ public class DataTreater {
 					}
 					thisSample.add(isThis);
 				}
-//				System.out.println(thisSample.size());
 				dataMatrix.add(thisSample);
 			}
 			lastTag = tg;
@@ -431,23 +354,20 @@ public class DataTreater {
 		return dataMatrix;
 	}
 	
-	public void buildCSV(String path, IndexReader reader) 
+	public void buildCSV(String path, IndexReader reader, String destinationFile) 
 			throws IOException, ClassNotFoundException {
 		File folder = new File(path);
 		long docCount = reader.getDocCount("contents");
         File[] files = folder.listFiles();
         String fileName = "";
-        File dataFile = new File("/home/murilo/Documentos/rm/project/data/data.csv");
-        BufferedWriter writer = null;
-        writer = new BufferedWriter(new FileWriter(dataFile));
-        writer.write("idf,mean_tf,query_place,pos,last_pos,next_pos,get_out\n");
-//        long docCount = reader.getDocCount("contents");
+	        File dataFile = new File(destinationFile);
+	        BufferedWriter writer = null;
+	        writer = new BufferedWriter(new FileWriter(dataFile));
+	        writer.write("idf,mean_tf,query_place,pos,last_pos,next_pos,get_out\n");
         for (int i=0; i<files.length;i++) {
         	fileName = files[i].getName();
-        	System.out.println(fileName);
         	BufferedReader rdr = new BufferedReader(new FileReader(path + fileName));
         	String line = rdr.readLine();
-//        	int waitingTitle = 1;
         	while (line != null) {
         		if (line.startsWith("<title>")) {
         			line = line.replaceAll("<title>", "");
@@ -460,9 +380,6 @@ public class DataTreater {
         				desc += (line + " ");
         				line = rdr.readLine();
         			}
-//        			System.out.println("Title: " + title + 
-//        					" Description: " + desc);
-//        			desc = desc.replaceAll("\\((.*?)\\)", "");//\\\"
         			if (desc.endsWith(".")) {
         				desc = desc.replaceAll("[\\.]", "");
         				desc += ".";
@@ -472,28 +389,19 @@ public class DataTreater {
         			desc = desc.toLowerCase();
         			desc = desc.replaceAll("( )\\1+", " ");
         			String tags = this.pos.tag(desc);
-//        			System.out.println(tags);
-//        			StringTokenizer tokens = new StringTokenizer(desc);
-//        			StringTokenizer posTags = new StringTokenizer(tags);
         			String[] tokens = desc.split(" ");
         			String[] posTags = tags.split(" ");
-//        			System.out.println("tokens " + tokens.countTokens() + " tags " + posTags.countTokens());
         			String lastTag = "<s>";
-        			//"idf,total_tf,query_place,pos,last_pos,next_pos"
         			int place = 0;
-        			int phraseSize = tokens.length;//tokens.countTokens();
-//        			while (tokens.hasMoreElements()) {
+        			int phraseSize = tokens.length;
         			for (int ii=0; ii<phraseSize; ii++) {
         				place++;
-//        				System.out.println(tokens[ii]);
-        				String tok = tokens[ii];//tokens.nextElement().toString();
-        				String tg = posTags[ii];//posTags.nextElement().toString();
+        				String tok = tokens[ii];
+        				String tg = posTags[ii];
         				tok = tok.trim();
         				tg = tg.trim();
-//        				tg = tg.replaceAll("[$]", "");
         				if ((!tok.equals(".")) && (!tok.equals(",")) &&
         						(!tok.equals(":")) && (!tok.equals("?")) && (!tok.equals("!"))) {
-//        					writer.write("\n");
             				
             				
             				Term t = new Term("contents",tok);
@@ -547,29 +455,9 @@ public class DataTreater {
         		}
         		line = rdr.readLine();
         	}
-//        	String content = readFile(path + fileName, StandardCharsets.UTF_8);
-//        	int a = content.indexOf("<title>");
         	
         	rdr.close();
         }
         writer.close();
-//        Term t = new Term("contents","children");
-//        int ch = reader.docFreq(t);
-//        System.out.println("Total doc freq of 'children': " + ch);
-//        
-//        long dictSize = reader.getSumTotalTermFreq("contents");
-//        System.out.println("Dictionary size: " + dictSize);
-//        
-//        long totalTermFreq = reader.totalTermFreq(t);
-//        System.out.println("Total term frequency of 'children': " + 
-//        		totalTermFreq);
-//        
-//        long docCount = reader.getDocCount("contents");
-//        System.out.println("Total doc count: " + docCount);
-//        
-//        long docCount2 = reader.getDocCount("path");
-//        System.out.println("Total doc count in 'path': " + docCount2);
-        
-//        reader.
 	}
 }

@@ -14,14 +14,14 @@ import java.util.Vector;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+//import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.Reader;
+//import java.io.Reader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.lang.Math.*;
+//import java.lang.Math.*;
 
 public class PosTagger {
 
@@ -31,34 +31,30 @@ public class PosTagger {
 	private Map<String,Integer> sumOfTags;
 	private Vector<String> tags;
 	private int nWords;
-//	private int numberOfTags;
 	
 	public PosTagger() {
 		this.countWordTag = new LinkedHashMap<String,Map<String,Integer> >();
 		this.countTagTag = new LinkedHashMap<String,Map<String,Integer> >();
 		this.sumOfTags = new HashMap<String,Integer>();
 		this.sumOfWords = new HashMap<String,Integer>();
-//		this.numberOfTags = 0;
 		this.tags = new Vector<String>(0);
 		this.nWords = 0;
 	};
 	
 	public void train(String corpusPath) {
-//		"/home/murilo/Documentos/rm/project/data/postags/nlp-master/resources/corpora/brown"
 		try {
+			System.out.println("Training POS Tagger...");
 			File folder = new File(corpusPath); 
 	        File[] files = folder.listFiles();
 	        String fileName = "";
 	        for (int i=0; i<files.length;i++) {
 	        	fileName = files[i].getName();
-//	        	System.out.println("Reading file " + fileName);
 	        	fileName = corpusPath + fileName;
 	        	BufferedReader rdr = new BufferedReader(new FileReader(fileName));
 	        	String a;
 	        	while((a = rdr.readLine()) != null) {
 	        		String lastTag = "<s>";
 	        		if (a.length() > 5) {
-//		        		System.out.println(batata + "\t" + a.length() + "\n" + a);
 	        			StringTokenizer tokens = new StringTokenizer(a);
 	        			while(tokens.hasMoreElements()) {
 	        				String nextToken = tokens.nextElement().toString();
@@ -72,9 +68,7 @@ public class PosTagger {
 	        				String tag = parts[parts.length-1];
 	        				int titleTag = tag.indexOf("-");
 	        				if (titleTag > 0) {
-//	        					System.out.println(tag);
 	        					tag = tag.substring(0, titleTag);
-//	        					System.out.println(tag);
 	        				}
 //	        				
 	        				addToWordMap(word,tag);
@@ -89,14 +83,11 @@ public class PosTagger {
 	        	saveSumOfWords();
 	        	saveSumOfTags();
 				for (Map.Entry<String, Integer> entry : sumOfTags.entrySet()) {
-				    String tag = entry.getKey();
 				    int n = entry.getValue().intValue();
-//			    	System.out.println("Tag: " + tag +
-//					    		" #: " + n);
 				    this.nWords += n;
 				}
 	        }
-//	        System.out.println(fileName);
+	        System.out.println("Done!");
 		} catch(IOException e) {
 			e.printStackTrace();
 		}
@@ -105,8 +96,6 @@ public class PosTagger {
 	}
 	
 	protected void addToWordMap(String word, String tag) {
-//		System.out.println("Incrementing count of tag " + tag + 
-//				" for word " + word);
 		
 		if (!this.countWordTag.containsKey(word)) {
 			Map<String,Integer> empty = new HashMap<String,Integer>();
@@ -121,17 +110,12 @@ public class PosTagger {
 	}
 	
 	protected void addToTagMap(String formerTag, String latterTag) {
-//		System.out.println("Incrementing count of tag " + latterTag + 
-//				" given tag " + formerTag);
 		
 		if (!this.countTagTag.containsKey(formerTag)) {
 			Map<String,Integer> empty = new HashMap<String,Integer>();
 			this.countTagTag.put(formerTag, empty);
-//			this.numberOfTags++;
 			if (!formerTag.equals("<s>")) {
 				this.tags.add(formerTag);
-				System.out.println("Number of tags so far: " + this.tags.size() +
-						". Added: " + formerTag);
 			}
 		}
 		
@@ -141,14 +125,6 @@ public class PosTagger {
 		
 		this.countTagTag.get(formerTag).put(latterTag, countTagTag.get(formerTag).get(latterTag)+1);
 	}
-	
-	/*
-	 * private Map<String,Map<String,Integer> > countWordTag;
-	private Map<String,Map<String,Integer> > countTagTag;
-	private Map<String,Integer> sumOfWords;
-	private Map<String,Integer> sumOfTags;
-	private Vector<String> tags; 
-	 */
 	
 	public void saveModel(String path) {
 		try {
@@ -169,6 +145,7 @@ public class PosTagger {
 		
 	}
 	
+	@SuppressWarnings("unchecked")
 	public void loadModel(String file) throws ClassNotFoundException {
 		try {
 			FileInputStream fileIn = new FileInputStream(file);
@@ -181,17 +158,6 @@ public class PosTagger {
 			this.nWords = (int) in.readObject();
 			in.close();
 			fileIn.close();
-//			for (Map.Entry<String, Integer> entry : sumOfTags.entrySet()) {
-//			    String tag = entry.getKey();
-//			    int n = entry.getValue().intValue();
-//			    if (n > 1000) {
-//			    	System.out.println("Main Tag: " + tag +
-//				    		" #: " + n);
-//			    } else {
-//			    	System.out.println("Other Tag: " + tag +
-//				    		" #: " + n);
-//			    }
-//			}
 			
 		} catch(IOException e) {
 			e.printStackTrace();
@@ -200,28 +166,14 @@ public class PosTagger {
 	
 	//Viterbi algorithm
 	public String tag(String phrase) {
-//		System.out.println("Probabilidade de IN depois de IN: " + 
-//				getProbTagTag("in","in"));
-//		System.out.println("Probabilidade de AT depois de IN: " + 
-//				getProbTagTag("in","at"));
-//		System.out.println("Aqui! " + phrase);
-//		phrase = phrase.replaceAll("\\((.*?)\\)", "");//\\\"
-//		if (phrase.endsWith(".")) {
-//			phrase = phrase.replaceAll("[\\.]", "");
-//			phrase += ".";
-//		}
-//		phrase = phrase.replaceAll("[\\.?!,]", " $0 ");
 		phrase = phrase.toLowerCase();
 		StringTokenizer st = new StringTokenizer(phrase);
 		int phraseSize = st.countTokens();
-		System.out.println(phrase);
 		int numberOfTags = this.tags.size();
 		int[][] track = new int[numberOfTags][phraseSize];
 		double[][] scores = new double[numberOfTags][phraseSize];
-		int nWord = 0;
 		String formerTag = "<s>";
 		String word = st.nextElement().toString();
-//		System.out.println("Aqui!" + numberOfTags + "\n");
 		for (int i=0; i<numberOfTags; i++) {
 			String thisTag = tags.get(i);
 			double logProbWord = -Math.log(getProbWordTag(word,thisTag));
@@ -271,7 +223,6 @@ public class PosTagger {
 			returnTags = tags.get(track[minInd][i]) + " " + returnTags;
 			minInd = track[minInd][i];
 		}
-		System.out.println(returnTags);
 		return returnTags;
 	}
 	

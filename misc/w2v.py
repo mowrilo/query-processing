@@ -30,7 +30,7 @@ def cleanhtml(raw_html):
 path = "../data/docs"
 os.chdir(path)
 files = os.listdir(".")
-files = files[0:10000]
+#files = files[0:10000]
 #os.chdir("./docs")
 #file = "12-0.txt"
 #sentences = gensim.models.word2vec.LineSentence(file)
@@ -56,7 +56,7 @@ for fl in first_files:
     tok = [w.lower() for w in tok]
     sentences.append(tok)
     
-model = gensim.models.Word2Vec(sentences,min_count=5,size=200,sg=1,workers=4)
+model = gensim.models.Word2Vec(sentences,min_count=5,size=200,sg=0,workers=4)
 
 ndocs = 10000
 sentences = []
@@ -86,7 +86,7 @@ for fl in files[10000:]:
    
 #model.train(sentences,total_examples = len(sentences), epochs=model.iter)
     
-model.save("../w2v_modelTest")
+model.save("../w2v_modelcbow")
 
 #sentences = gensim.models.word2vec.PathLineSentences(dirr)
 

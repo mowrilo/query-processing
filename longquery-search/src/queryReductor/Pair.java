@@ -1,6 +1,6 @@
 package queryReductor;
 
-import java.util.Comparator;
+//import java.util.Comparator;
 
 public class Pair {
 	private final double value;
