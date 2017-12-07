@@ -1,4 +1,4 @@
-#Long Query Processor
+# Long Query Processor
 
 This repository provides the codes used on the development of a classifier to remove words from verbose queries. It was based on Apache Lucene.
 
