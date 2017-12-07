@@ -1,3 +1,9 @@
+/*
+ * KNN Classifier
+ * 
+ * Author: Murilo V. F. Menezes
+ */
+
 package queryReductor;
 
 import java.io.FileInputStream;
@@ -12,17 +18,23 @@ public class KNNClassifier {
 	
 	private ArrayList<ArrayList<Double> > data;
 	private int k;
-	private double maxIdf;
+	private double maxIdf; //Data used for normalizing continuous features
 	private double maxTf;
 	private double maxPos;
 	private double minPos;
+	private double maxLen;
+	private double minLen;
 	
 	public KNNClassifier(String dataPath, int kValue) throws ClassNotFoundException {
-		this.k = kValue;
+		this.k = kValue; //Number of neighbors
 		loadData(dataPath);
-		normalizeData();
+		normalizeData(); //Receives and normalizes data
 	}
 	
+	/* This method scales data to fit between 0 and 1, using
+	 * its max and min values stored during the building
+	 * of the database.
+	 */
 	protected void normalizeData() {
 		ArrayList<ArrayList<Double> > data2 = new ArrayList<ArrayList<Double> >();
 		for (int i=0; i<data.size(); i++) {
@@ -47,6 +59,9 @@ public class KNNClassifier {
 		this.data = data2;
 	}
 	
+	/*
+	 * Loading data previously built
+	 */
 	@SuppressWarnings("unchecked")
 	protected void loadData(String file) throws ClassNotFoundException {
 			try {
@@ -64,6 +79,11 @@ public class KNNClassifier {
 			}
 	}
 	
+	
+	/*
+	 * Given two samples, this method computed the
+	 * Euclidean distance between them
+	 */
 	protected double getEuclideanDistance(ArrayList<Double> sample1, ArrayList<Double> sample2) {
 		int size = sample1.size();
 		double dist = 0;
@@ -75,11 +95,15 @@ public class KNNClassifier {
 		return dist;
 	}
 	
+	/*
+	 * This method receives a sample and classifies it
+	 * according to its neighbors' labels
+	 */
 	public int predict(ArrayList<Double> sample) {
 		
 		ArrayList<Pair> distances = new ArrayList<Pair>();
 		int dataSize = data.size();
-		for (int i=0; i<dataSize; i++) {
+		for (int i=0; i<dataSize; i++) { //Computes the distance to all the training features
 			ArrayList<Double> trainSample = data.get(i);
 			double dist = getEuclideanDistance(sample,trainSample);
 			Pair thisSample = new Pair(dist,i);
@@ -87,24 +111,27 @@ public class KNNClassifier {
 		}
 		
 		Comparator<Pair> comparator = new PairComparator();
-        Collections.sort(distances, comparator);
+        Collections.sort(distances, comparator); //Sorts by distance
         
 		double sumOfLabels = 0;
-		for (int i=0; i<k; i++) {
+		for (int i=0; i<k; i++) { //Gets the K nearest and computes how many are labeled '1'
 			int index = distances.get(i).getSecond();
 			ArrayList<Double> smp = data.get(index);
 			double label = smp.get(smp.size()-1);
 			sumOfLabels += label;
 		}
 		
-		if (sumOfLabels > (((double) k)*.5)) {
-			return 1;
+		if (sumOfLabels > (((double) k)*.5)) { //If more than half of the neighbors is
+			return 1;							// labeled 1, the sample is labeled 1 as well
 		} else {
 			return 0;
 		}
 		
 	}
 	
+	/*
+	 * Receives a set of samples and classifies each one
+	 */
 	public ArrayList<Integer> predictAll(ArrayList<ArrayList<Double> > dataToPredict){
 		ArrayList<Integer> preds = new ArrayList<Integer>();
 		
@@ -118,6 +145,9 @@ public class KNNClassifier {
 	}
 }
 
+/*
+ * Compares the class Pair, for sorting purposes
+ */
 class PairComparator implements Comparator<Pair> {
     public int compare(Pair p1, Pair p2) {
     	if (p1.getFirst() > p2.getFirst())	return 1;

@@ -1,6 +1,10 @@
-package queryReductor;
+/*
+ * Class to store a pair of values, used with the KNN classifier.
+ * 
+ * Author: Murilo V. F. Menezes
+ */
 
-//import java.util.Comparator;
+package queryReductor;
 
 public class Pair {
 	private final double value;

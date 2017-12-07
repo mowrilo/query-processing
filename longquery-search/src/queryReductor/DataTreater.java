@@ -4,48 +4,27 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-//import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-//import java.nio.charset.Charset;
-//import java.nio.charset.StandardCharsets;
-//import java.nio.file.Files;
-//import java.nio.file.Paths;
-//import java.util.Map;
-//import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.ArrayList;
-//import java.util.Comparator;
 
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 
 import queryReductor.PosTagger;
 
-/*
- * 	"idf"            "mean_tf"        "query_place"    "wdt"            "nn"            
- [6] "jj"             "in"             "hvz"            "cc"             "vb"            
-[11] "np"             "vbn"            "ben"            "ber"            "rb"            
-[16] "cs"             "wps"            "hv"             "ap"             "to"            
-[21] "dt"             "md"             "former_<s>"     "former_jj"      "former_in"     
-[26] "former_at"      "former_hvz"     "former_cc"      "former_nns"     "former_comma"
-[31] "former_doz"     "former_ber"     "former_wps"     "former_hv"      "former_np"     
-[36] "former_to"      "former_."       "former_md"      "next_nn"        "next_at"       
-[41] "next_."         "next_vbn"       "next_ben"       "next_pp$"       "next_wps"      
-[46] "next_ap"
- */
-
 public class DataTreater {
 	
 	private ArrayList<ArrayList<Double> > data;
 	private PosTagger pos;
 	private String[] features;
-	private double maxIdf;
+	private double maxIdf; 
 	private double maxTf;
 	private double maxPos;
 	private double minPos;
@@ -53,12 +32,18 @@ public class DataTreater {
 	private double maxLen;
 	
 	public DataTreater(String posFile) throws ClassNotFoundException {
-		pos = new PosTagger();
+		pos = new PosTagger(); //POS Tagger for syntactic analysis
     	pos.loadModel(posFile);
-		this.data = new ArrayList<ArrayList<Double> >();
-    	features = new String[] {"nn","former_<s>","former_nns","next_."};    	
+		this.data = new ArrayList<ArrayList<Double> >(); //Training data
+    	features = new String[] {"nn","former_<s>","former_nns","next_."}; //Used POS features 	
 	}
 	
+	/*
+	 * This method receives a path to a folder with the text training data.
+	 * It iterates for each file and builds the dataset in which each row is 
+	 * a word. The files must have the tag "<title>" for the ideal reduced query,
+	 * followed by 2 blank lines and the original long query.
+	 */
 	public void buildData(String path, IndexReader reader) throws IOException, ClassNotFoundException {
 		File folder = new File(path);
 		long docCount = reader.getDocCount("contents");
@@ -72,7 +57,7 @@ public class DataTreater {
         this.maxLen = 0;
         this.minLen = 999999;
         
-        for (int i=0; i<files.length;i++) {
+        for (int i=0; i<files.length;i++) { //Iterates through the files
         	fileName = files[i].getName();
         	BufferedReader rdr = new BufferedReader(new FileReader(path + fileName));
         	String line = rdr.readLine();

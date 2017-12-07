@@ -26,39 +26,33 @@ import queryReductor.PosTagger;
 public class Example {
 
 	public static void main(String[] args) throws IOException, ParseException, ClassNotFoundException {
-		String indexPath = "/home/murilo/Documentos/rm/project/index";
+		String indexPath = "/path/to/index";
         Analyzer analyzer = new StandardAnalyzer();
 
-        String corpusPath = "/home/murilo/Documentos/rm/project/data/postags/nlp-master/resources/corpora/brown/";
+        String corpusPath = "/path/to/POS/corpus";
         
         PosTagger pos = new PosTagger();
-//        pos.train(corpusPath);
-//        pos.saveModel("/home/murilo/Documentos/rm/project/data/POSModel.ser");
-//        PosTagger pos2 = new PosTagger();
-        pos.loadModel("/home/murilo/Documentos/rm/project/data/POSModel.ser");
+        pos.train(corpusPath);
+        pos.saveModel("/path/to/POS/model");
+        pos.loadModel("/path/to/POS/model");
         
         int hitsPerPage = 10;
         IndexReader reader = DirectoryReader.open(FSDirectory.open(Paths.get(indexPath)));
         IndexSearcher searcher = new IndexSearcher(reader);
         
-        DataTreater dt = new DataTreater("/home/murilo/Documentos/rm/project/data/POSModel.ser");
-//        dt.buildCSV("/home/murilo/Documentos/rm/project/data/topics/train/",
-//        		reader, "/home/murilo/Documentos/rm/project/data/data.csv");
-//        dt.buildData("/home/murilo/Documentos/rm/project/data/topics/train/", 
-//        		reader);
-//        dt.saveData("/home/murilo/Documentos/rm/project/data/trainData.ser");
-        dt.loadData("/home/murilo/Documentos/rm/project/data/trainData.ser");
+        DataTreater dt = new DataTreater("/path/to/POS/model");
+        dt.loadData("/path/to/training/data");
         
         int k = 2;
-    	KNNClassifier clas = new KNNClassifier("/home/murilo/Documentos/rm/project/data/trainData.ser",k);
+    	KNNClassifier clas = new KNNClassifier("/path/to/training/data",k);
     	
 //      LogisticRegressionClassifier clas = new LogisticRegressionClassifier();
 //      System.out.println("Training Model...");
-//      clas.train("/home/murilo/Documentos/rm/project/data/trainData.ser",
+//      clas.train("/path/to/training/data",
 //      		500000, .01);
 //      System.out.println("Done!");
-//      clas.saveModel("/home/murilo/Documentos/rm/project/data/logisticData.ser");
-//      clas.loadModel("/home/murilo/Documentos/rm/project/data/logisticData.ser");
+//      clas.saveModel("/path/to/logisticRegression/data");
+//      clas.loadModel("/path/to/logisticRegression/data");
     	
     	String query= "What are the prospects of the Quebec separatists achieving independence from the rest of Canada?";
 		
