@@ -1,3 +1,9 @@
+/*
+ * Query reductor example
+ * 
+ * Author: Murilo V. F. Menezes
+ */
+
 package searcher;
 
 import java.io.IOException;
@@ -26,9 +32,14 @@ import queryReductor.PosTagger;
 public class Example {
 
 	public static void main(String[] args) throws IOException, ParseException, ClassNotFoundException {
+		
+		//Change the variable to the path to the index
 		String indexPath = "/path/to/index";
         Analyzer analyzer = new StandardAnalyzer();
 
+        
+        //Change the path to the path of your training POS corpus
+        //Inside the repository there is an already trained POS model
         String corpusPath = "/path/to/POS/corpus";
         
         PosTagger pos = new PosTagger();
@@ -40,11 +51,19 @@ public class Example {
         IndexReader reader = DirectoryReader.open(FSDirectory.open(Paths.get(indexPath)));
         IndexSearcher searcher = new IndexSearcher(reader);
         
+        //The DataTreater receives the path to a trained POS model
         DataTreater dt = new DataTreater("/path/to/POS/model");
+        
+        //Change the path to match the training data
+        //There is an already structured training dataset in the repository
         dt.loadData("/path/to/training/data");
         
         int k = 2;
+      //Change the path to match the training data
     	KNNClassifier clas = new KNNClassifier("/path/to/training/data",k);
+    	
+    	//The Logistic Regression Classifier can be used as well
+    	//Already trained parameters are provided in the repository
     	
 //      LogisticRegressionClassifier clas = new LogisticRegressionClassifier();
 //      System.out.println("Training Model...");
@@ -56,6 +75,8 @@ public class Example {
     	
     	String query= "What are the prospects of the Quebec separatists achieving independence from the rest of Canada?";
 		
+    	
+    	//Preprocess the original query prior to the POS Tagging
 		if (query.endsWith(".")) {
 			query= query.replaceAll("[\\.]", "");
 			query+= ".";
@@ -67,10 +88,13 @@ public class Example {
         Matcher m = p.matcher(query);
         query = m.replaceAll("");
 		String originalQuery = query;
+		
+		//Extract the features of the sentence and return
+		//a set of samples representing each word
 		ArrayList<ArrayList<Double> > dataPhrase = dt.analyzeSentence(originalQuery, reader);
-		originalQuery = originalQuery.replaceAll("[\\.?!,\")(:;]", " $0 ");
-		originalQuery = originalQuery.replaceAll("--", " -- ");
-		originalQuery = originalQuery.replaceAll("( )\\1+", " ");
+		originalQuery = originalQuery.replaceAll("[\\.?!,\")(:;]", " $0 "); //Fill special characters with
+		originalQuery = originalQuery.replaceAll("--", " -- ");  // whitespaces before splitting
+		originalQuery = originalQuery.replaceAll("( )\\1+", " "); //Remove extra whitespaces
 		originalQuery = originalQuery.toLowerCase();
 		ArrayList<Integer> results = clas.predictAll(dataPhrase);//,threshold);
 		
@@ -79,6 +103,8 @@ public class Example {
 		
 		String newQuery = "";
 		
+		
+		//Build the new query
 		for (int i=0;i<results.size();i++) {
 			if ((!terms[i].equals(".")) && (!terms[i].equals(",")) &&
 					(!terms[i].equals(":")) && (!terms[i].equals("?")) && 
@@ -94,6 +120,8 @@ public class Example {
 		}
 		
 		query = query.replaceAll("\\?", ".");
+		
+		//Show results of both queries
 		
 		System.out.println("\nOld query: " + query + "\nNew Query: " + newQuery);
 
